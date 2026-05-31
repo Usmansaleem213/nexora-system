@@ -28,6 +28,15 @@ export default function App() {
     buying_rate: 0, forwarding_awb: '', forward_vendor: ''
   });
 
+  // TRACKING STATES
+  const [trackingAwb, setTrackingAwb] = useState('');
+  const [trackingUpdates, setTrackingUpdates] = useState([]);
+  const [selectedAwbShipment, setSelectedAwbShipment] = useState(null);
+  const [newUpdate, setNewUpdate] = useState({
+    location: '', status: 'In Transit', description: ''
+  });
+  const [trackingMsg, setTrackingMsg] = useState('');
+
   const fetchLedger = async () => {
     const { data } = await supabase
       .from('customer_ledgers')
@@ -60,6 +69,55 @@ export default function App() {
     fetchProfiles();
   }, []);
 
+  // TRACKING FUNCTIONS
+  const handleSearchTracking = async (e) => {
+    e.preventDefault();
+    const shipment = ledgerData.find(s => s.nexora_airwaybill?.toLowerCase() === trackingAwb.toLowerCase());
+    if (!shipment) { setTrackingMsg('❌ Koi shipment nahi mila is AWB se'); setSelectedAwbShipment(null); setTrackingUpdates([]); return; }
+    setSelectedAwbShipment(shipment);
+    setTrackingMsg('');
+    const { data } = await supabase
+      .from('tracking_updates')
+      .select('*')
+      .eq('awb', shipment.nexora_airwaybill)
+      .order('created_at', { ascending: false });
+    if (data) setTrackingUpdates(data);
+  };
+
+  const handleAddTrackingUpdate = async (e) => {
+    e.preventDefault();
+    if (!selectedAwbShipment) return;
+    const { error } = await supabase.from('tracking_updates').insert([{
+      awb: selectedAwbShipment.nexora_airwaybill,
+      location: newUpdate.location,
+      status: newUpdate.status,
+      description: newUpdate.description,
+      created_at: new Date().toISOString()
+    }]);
+    if (!error) {
+      setTrackingMsg('✅ Tracking update add ho gaya!');
+      setNewUpdate({ location: '', status: 'In Transit', description: '' });
+      const { data } = await supabase
+        .from('tracking_updates')
+        .select('*')
+        .eq('awb', selectedAwbShipment.nexora_airwaybill)
+        .order('created_at', { ascending: false });
+      if (data) setTrackingUpdates(data);
+    } else {
+      setTrackingMsg('❌ Error: ' + error.message);
+    }
+  };
+
+  const handleDeleteTrackingUpdate = async (id) => {
+    await supabase.from('tracking_updates').delete().eq('id', id);
+    const { data } = await supabase
+      .from('tracking_updates')
+      .select('*')
+      .eq('awb', selectedAwbShipment.nexora_airwaybill)
+      .order('created_at', { ascending: false });
+    if (data) setTrackingUpdates(data);
+  };
+
   // DASHBOARD METRICS
   const getDashboardMetrics = () => {
     const totalShipments = ledgerData.length;
@@ -76,17 +134,11 @@ export default function App() {
   const handleApprovePending = (item) => {
     setEditId(item.id);
     setEditFormData({
-      sender_name: item.sender_name || '',
-      sender_address: item.sender_address || '',
-      sender_phone: item.sender_phone || '',
-      sender_email: item.sender_email || '',
-      receiver_name: item.receiver || '',
-      receiver_address: item.receiver_address || '',
-      receiver_phone: item.receiver_phone || '',
-      receiver_email: item.receiver_email || '',
-      destination: item.destination || '',
-      weight: item.weight || '',
-      service: item.service || '',
+      sender_name: item.sender_name || '', sender_address: item.sender_address || '',
+      sender_phone: item.sender_phone || '', sender_email: item.sender_email || '',
+      receiver_name: item.receiver || '', receiver_address: item.receiver_address || '',
+      receiver_phone: item.receiver_phone || '', receiver_email: item.receiver_email || '',
+      destination: item.destination || '', weight: item.weight || '', service: item.service || '',
       remote_status: 'Non-Remote',
       debit: 0, credit: 0, petrol: 0, remote_charges: 0,
       buying_rate: 0, forwarding_awb: '', forward_vendor: ''
@@ -107,39 +159,21 @@ export default function App() {
       if (item.sender_name) {
         const nameKey = item.sender_name.trim();
         if (!customersMap[nameKey]) {
-          customersMap[nameKey] = {
-            name: nameKey,
-            phone: item.sender_phone || 'N/A',
-            email: item.sender_email || 'N/A',
-            totalShipments: 0
-          };
+          customersMap[nameKey] = { name: nameKey, phone: item.sender_phone || 'N/A', email: item.sender_email || 'N/A', totalShipments: 0 };
         }
         customersMap[nameKey].totalShipments += 1;
       }
     });
-
-    // Profiles se bhi customers add karo jo abhi tak shipment nahi ki
     profilesData.forEach(profile => {
       if (profile.full_name && !customersMap[profile.full_name.trim()]) {
-        customersMap[profile.full_name.trim()] = {
-          name: profile.full_name.trim(),
-          phone: profile.phone || 'N/A',
-          email: profile.email || 'N/A',
-          totalShipments: 0
-        };
+        customersMap[profile.full_name.trim()] = { name: profile.full_name.trim(), phone: profile.phone || 'N/A', email: profile.email || 'N/A', totalShipments: 0 };
       }
     });
-
     return Object.values(customersMap);
   };
 
   const handleViewLabel = (item, fromTab) => {
-    setLabelData({
-      nexoraTracking: item.nexora_airwaybill,
-      receiver_name: item.receiver,
-      destination: item.destination,
-      service: item.service
-    });
+    setLabelData({ nexoraTracking: item.nexora_airwaybill, receiver_name: item.receiver, destination: item.destination, service: item.service });
     setReturnTab(fromTab);
     setActiveTab('new_shipment');
   };
@@ -160,14 +194,8 @@ export default function App() {
       setReturnTab('new_shipment');
       setLabelData({ ...formData, nexoraTracking });
       fetchLedger();
-      setFormData({
-        sender_name: '', sender_address: '', sender_phone: '', sender_email: '',
-        receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '',
-        destination: '', weight: '', service: ''
-      });
-    } else {
-      alert("Error saving data: " + error.message);
-    }
+      setFormData({ sender_name: '', sender_address: '', sender_phone: '', sender_email: '', receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '', destination: '', weight: '', service: '' });
+    } else { alert("Error saving data: " + error.message); }
   };
 
   const handleEditClick = (item) => {
@@ -203,14 +231,8 @@ export default function App() {
         status: 'approved'
       })
       .eq('id', editId);
-
-    if (!error) {
-      setIsModalOpen(false);
-      fetchLedger();
-      fetchPending();
-    } else {
-      alert("Update failed: " + error.message);
-    }
+    if (!error) { setIsModalOpen(false); fetchLedger(); fetchPending(); }
+    else { alert("Update failed: " + error.message); }
   };
 
   const getCalculatedLedger = (customerName) => {
@@ -227,25 +249,22 @@ export default function App() {
     const chronological = [...filtered].reverse();
     let runningSum = 0;
     const withBalance = chronological.map((item) => {
-      const d = Number(item.debit || 0);
-      const c = Number(item.credit || 0);
-      const p = Number(item.petrol || 0);
-      const rc = Number(item.remote_charges || 0);
-      const buy = Number(item.buying_rate || 0);
+      const d = Number(item.debit || 0), c = Number(item.credit || 0), p = Number(item.petrol || 0), rc = Number(item.remote_charges || 0), buy = Number(item.buying_rate || 0);
       runningSum = runningSum + d + p + rc - c;
       const totalSale = d + p + rc;
-      const shipmentProfit = totalSale > 0 ? (totalSale - buy) : 0;
-      return { ...item, runningBalance: runningSum, profit: shipmentProfit };
+      return { ...item, runningBalance: runningSum, profit: totalSale > 0 ? (totalSale - buy) : 0 };
     });
     return withBalance.reverse();
   };
 
   const getLedgerMetrics = (customerName) => {
     const list = getCalculatedLedger(customerName);
-    let totalOutstanding = list.length > 0 ? list[0].runningBalance : 0;
-    let totalPaid = list.reduce((sum, item) => sum + Number(item.credit || 0), 0);
-    let totalProfit = list.reduce((sum, item) => sum + Number(item.profit || 0), 0);
-    return { totalOutstanding, totalPaid, totalProfit, totalCount: list.length };
+    return {
+      totalOutstanding: list.length > 0 ? list[0].runningBalance : 0,
+      totalPaid: list.reduce((sum, item) => sum + Number(item.credit || 0), 0),
+      totalProfit: list.reduce((sum, item) => sum + Number(item.profit || 0), 0),
+      totalCount: list.length
+    };
   };
 
   const shareLedgerWhatsApp = (customerName) => {
@@ -255,6 +274,15 @@ export default function App() {
   };
 
   const metrics = getDashboardMetrics();
+
+  const statusColors = {
+    'Shipment Booked': 'bg-blue-900/40 text-blue-400 border-blue-500/30',
+    'In Transit': 'bg-yellow-900/40 text-yellow-400 border-yellow-500/30',
+    'Out for Delivery': 'bg-orange-900/40 text-orange-400 border-orange-500/30',
+    'Customs Clearance': 'bg-purple-900/40 text-purple-400 border-purple-500/30',
+    'Delivered': 'bg-green-900/40 text-green-400 border-green-500/30',
+    'Delayed': 'bg-red-900/40 text-red-400 border-red-500/30',
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white font-sans">
@@ -274,9 +302,7 @@ export default function App() {
             <button type="button" onClick={() => { setActiveTab('pending'); setLabelData(null); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'pending' ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
               <span>🔔</span> Pending Requests
-              {pendingData.length > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{pendingData.length}</span>
-              )}
+              {pendingData.length > 0 && <span className="ml-auto bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{pendingData.length}</span>}
             </button>
             <button type="button" onClick={() => { setActiveTab('new_shipment'); setLabelData(null); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'new_shipment' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
@@ -290,12 +316,14 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'customers' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
               <span>👥</span> Customers / Ledgers
             </button>
+            <button type="button" onClick={() => { setActiveTab('tracking_control'); setLabelData(null); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'tracking_control' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+              <span>🗺️</span> Tracking Control
+            </button>
             <button type="button" onClick={() => { setActiveTab('registered'); setLabelData(null); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'registered' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
               <span>🆕</span> Registered Users
-              {profilesData.length > 0 && (
-                <span className="ml-auto bg-blue-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{profilesData.length}</span>
-              )}
+              {profilesData.length > 0 && <span className="ml-auto bg-blue-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{profilesData.length}</span>}
             </button>
           </nav>
         </div>
@@ -305,13 +333,11 @@ export default function App() {
       {/* MAIN CONTENT */}
       <div className="flex-1 pl-64 p-8">
 
-        {/* DASHBOARD TAB */}
+        {/* DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="max-w-7xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">📊 Admin Dashboard</h2>
             <p className="text-slate-400 mb-6">Nexora Courier & Logistics — Overview</p>
-
-            {/* MAIN METRICS */}
             <div className="grid grid-cols-5 gap-4 mb-8">
               <div className="bg-slate-900 border border-blue-500/20 p-5 rounded-xl">
                 <p className="text-xs text-slate-400 font-medium">Total Shipments</p>
@@ -339,8 +365,6 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-1">Unpaid balance</p>
               </div>
             </div>
-
-            {/* SECOND ROW */}
             <div className="grid grid-cols-3 gap-4 mb-8">
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
                 <p className="text-xs text-slate-400 font-medium">Pending Requests</p>
@@ -358,19 +382,12 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-1">With shipments</p>
               </div>
             </div>
-
-            {/* RECENT ACTIVITY */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
               <h3 className="font-bold text-slate-300 mb-4">🕐 Recent Shipments</h3>
               <table className="w-full text-sm text-left">
                 <thead>
                   <tr className="text-slate-400 border-b border-slate-700 text-xs uppercase">
-                    <th className="pb-3 px-2">AWB</th>
-                    <th className="pb-3 px-2">Sender</th>
-                    <th className="pb-3 px-2">Receiver</th>
-                    <th className="pb-3 px-2">Destination</th>
-                    <th className="pb-3 px-2">Service</th>
-                    <th className="pb-3 px-2 text-right">Amount</th>
+                    <th className="pb-3 px-2">AWB</th><th className="pb-3 px-2">Sender</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -390,7 +407,136 @@ export default function App() {
           </div>
         )}
 
-        {/* PENDING REQUESTS TAB */}
+        {/* TRACKING CONTROL TAB */}
+        {activeTab === 'tracking_control' && (
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-black text-white mb-2">🗺️ Tracking Control Panel</h2>
+            <p className="text-slate-400 mb-6">Kisi bhi shipment ki location manually update karo</p>
+
+            {/* SEARCH AWB */}
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
+              <h3 className="font-bold text-slate-300 mb-4">Step 1: AWB Search Karo</h3>
+              <form onSubmit={handleSearchTracking} className="flex gap-3">
+                <input
+                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                  placeholder="Nexora AWB daalo e.g. NX-123456789"
+                  value={trackingAwb}
+                  onChange={(e) => setTrackingAwb(e.target.value)}
+                  required
+                />
+                <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 rounded-lg transition-all">
+                  🔍 Search
+                </button>
+              </form>
+              {trackingMsg && !trackingMsg.startsWith('✅') && (
+                <p className="text-red-400 text-sm mt-3">{trackingMsg}</p>
+              )}
+            </div>
+
+            {selectedAwbShipment && (
+              <>
+                {/* SHIPMENT INFO */}
+                <div className="bg-slate-900 border border-purple-500/30 rounded-xl p-6 mb-6">
+                  <div className="grid grid-cols-4 gap-4 text-sm">
+                    <div><p className="text-xs text-slate-400">AWB</p><p className="font-mono font-bold text-purple-400">{selectedAwbShipment.nexora_airwaybill}</p></div>
+                    <div><p className="text-xs text-slate-400">Sender</p><p className="font-bold text-white">{selectedAwbShipment.sender_name}</p></div>
+                    <div><p className="text-xs text-slate-400">Receiver</p><p className="font-bold text-white">{selectedAwbShipment.receiver}</p></div>
+                    <div><p className="text-xs text-slate-400">Destination</p><p className="font-bold text-blue-400">{selectedAwbShipment.destination}</p></div>
+                  </div>
+                </div>
+
+                {/* ADD NEW UPDATE */}
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
+                  <h3 className="font-bold text-slate-300 mb-4">Step 2: Naya Location Update Add Karo</h3>
+                  <form onSubmit={handleAddTrackingUpdate} className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-slate-400">Location *</label>
+                      <input
+                        className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                        placeholder="e.g. Karachi, Pakistan"
+                        value={newUpdate.location}
+                        onChange={(e) => setNewUpdate({...newUpdate, location: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400">Status *</label>
+                      <select
+                        className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                        value={newUpdate.status}
+                        onChange={(e) => setNewUpdate({...newUpdate, status: e.target.value})}
+                      >
+                        <option value="Shipment Booked">📋 Shipment Booked</option>
+                        <option value="In Transit">🚚 In Transit</option>
+                        <option value="Customs Clearance">🛃 Customs Clearance</option>
+                        <option value="Out for Delivery">🏃 Out for Delivery</option>
+                        <option value="Delivered">✅ Delivered</option>
+                        <option value="Delayed">⚠️ Delayed</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-slate-400">Description</label>
+                      <input
+                        className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                        placeholder="e.g. Package has departed from Karachi airport"
+                        value={newUpdate.description}
+                        onChange={(e) => setNewUpdate({...newUpdate, description: e.target.value})}
+                      />
+                    </div>
+                    {trackingMsg && (
+                      <div className={`col-span-2 text-xs p-3 rounded-lg ${trackingMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
+                        {trackingMsg}
+                      </div>
+                    )}
+                    <div className="col-span-2">
+                      <button type="submit" className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-all">
+                        ➕ Add Tracking Update
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* EXISTING UPDATES TIMELINE */}
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+                  <h3 className="font-bold text-slate-300 mb-4">📍 Current Tracking Timeline ({trackingUpdates.length} updates)</h3>
+                  {trackingUpdates.length === 0 ? (
+                    <p className="text-slate-400 text-sm text-center py-4">Abhi koi tracking update nahi hai</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {trackingUpdates.map((update, idx) => (
+                        <div key={update.id} className="flex items-start gap-4 bg-slate-800/40 rounded-lg p-4">
+                          <div className="flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full bg-purple-500 mt-1"></div>
+                            {idx < trackingUpdates.length - 1 && <div className="w-0.5 h-full bg-slate-700 mt-1"></div>}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className={`text-xs px-2 py-0.5 rounded border font-bold ${statusColors[update.status] || 'bg-slate-800 text-slate-400 border-slate-600'}`}>
+                                  {update.status}
+                                </span>
+                                <p className="font-bold text-white mt-1">📍 {update.location}</p>
+                                {update.description && <p className="text-slate-400 text-xs mt-1">{update.description}</p>}
+                                <p className="text-slate-500 text-xs mt-1">{new Date(update.created_at).toLocaleString()}</p>
+                              </div>
+                              <button type="button"
+                                onClick={() => handleDeleteTrackingUpdate(update.id)}
+                                className="text-red-400 hover:text-red-300 text-xs font-bold ml-4">
+                                🗑️ Del
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* PENDING REQUESTS */}
         {activeTab === 'pending' && (
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
@@ -408,36 +554,14 @@ export default function App() {
                   <div key={item.id} className="bg-slate-900 border border-orange-500/30 rounded-xl p-6 hover:border-orange-500/60 transition-all">
                     <div className="flex justify-between items-start">
                       <div className="grid grid-cols-4 gap-6 flex-1">
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">Customer</p>
-                          <p className="font-bold text-white">{item.sender_name}</p>
-                          <p className="text-xs text-slate-400">{item.sender_email}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">Receiver</p>
-                          <p className="font-bold text-white">{item.receiver}</p>
-                          <p className="text-xs text-slate-400">{item.receiver_phone}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">Destination</p>
-                          <p className="font-bold text-blue-400">{item.destination}</p>
-                          <p className="text-xs text-slate-400">{item.weight} KG • {item.service}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-400 mb-1">AWB</p>
-                          <p className="font-mono text-xs text-slate-300">{item.nexora_airwaybill}</p>
-                          <p className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A'}</p>
-                        </div>
+                        <div><p className="text-xs text-slate-400 mb-1">Customer</p><p className="font-bold text-white">{item.sender_name}</p><p className="text-xs text-slate-400">{item.sender_email}</p></div>
+                        <div><p className="text-xs text-slate-400 mb-1">Receiver</p><p className="font-bold text-white">{item.receiver}</p><p className="text-xs text-slate-400">{item.receiver_phone}</p></div>
+                        <div><p className="text-xs text-slate-400 mb-1">Destination</p><p className="font-bold text-blue-400">{item.destination}</p><p className="text-xs text-slate-400">{item.weight} KG • {item.service}</p></div>
+                        <div><p className="text-xs text-slate-400 mb-1">AWB</p><p className="font-mono text-xs text-slate-300">{item.nexora_airwaybill}</p><p className="text-xs text-slate-400">{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A'}</p></div>
                       </div>
                       <div className="flex gap-2 ml-6">
-                        <button type="button" onClick={() => handleApprovePending(item)}
-                          className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">
-                          ✅ Approve
-                        </button>
-                        <button type="button" onClick={() => handleRejectPending(item.id)}
-                          className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 font-bold px-4 py-2 rounded-lg text-sm transition-all">
-                          ❌ Reject
-                        </button>
+                        <button type="button" onClick={() => handleApprovePending(item)} className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">✅ Approve</button>
+                        <button type="button" onClick={() => handleRejectPending(item.id)} className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 font-bold px-4 py-2 rounded-lg text-sm transition-all">❌ Reject</button>
                       </div>
                     </div>
                   </div>
@@ -447,7 +571,7 @@ export default function App() {
           </div>
         )}
 
-        {/* REGISTERED USERS TAB */}
+        {/* REGISTERED USERS */}
         {activeTab === 'registered' && (
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">🆕 Registered Users</h2>
@@ -456,11 +580,7 @@ export default function App() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="text-slate-400 border-b border-slate-700 text-xs uppercase">
-                    <th className="pb-3 px-2">Name</th>
-                    <th className="pb-3 px-2">Email</th>
-                    <th className="pb-3 px-2">Phone</th>
-                    <th className="pb-3 px-2">Joined</th>
-                    <th className="pb-3 px-2 text-center">WhatsApp</th>
+                    <th className="pb-3 px-2">Name</th><th className="pb-3 px-2">Email</th><th className="pb-3 px-2">Phone</th><th className="pb-3 px-2">Joined</th><th className="pb-3 px-2 text-center">WhatsApp</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -474,8 +594,7 @@ export default function App() {
                       <td className="py-3.5 px-2 text-slate-400 text-xs">{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</td>
                       <td className="py-3.5 px-2 text-center">
                         {profile.phone && profile.phone !== 'N/A' ? (
-                          <button type="button"
-                            onClick={() => window.open(`https://wa.me/92${profile.phone.replace(/^0/, '').replace(/\D/g, '')}`, '_blank')}
+                          <button type="button" onClick={() => window.open(`https://wa.me/92${profile.phone.replace(/^0/, '').replace(/\D/g, '')}`, '_blank')}
                             className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 px-3 py-1 rounded-md text-xs font-bold transition-all">
                             💬 WhatsApp
                           </button>
@@ -489,7 +608,7 @@ export default function App() {
           </div>
         )}
 
-        {/* NEW SHIPMENT TAB */}
+        {/* NEW SHIPMENT */}
         {activeTab === 'new_shipment' && (
           <div>
             {!labelData ? (
@@ -529,7 +648,7 @@ export default function App() {
           </div>
         )}
 
-        {/* HISTORY TAB */}
+        {/* HISTORY */}
         {activeTab === 'history' && (
           <div className="max-w-6xl mx-auto bg-slate-900 p-6 rounded-xl border border-slate-700 shadow-xl">
             <h2 className="text-xl font-bold mb-4 text-blue-400">All Shipments History</h2>
@@ -537,12 +656,7 @@ export default function App() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="text-slate-400 border-b border-slate-700 text-sm">
-                    <th className="pb-3 px-2">AWB / Tracking</th>
-                    <th className="pb-3 px-2">Sender</th>
-                    <th className="pb-3 px-2">Receiver</th>
-                    <th className="pb-3 px-2">Destination</th>
-                    <th className="pb-3 px-2">Service</th>
-                    <th className="pb-3 px-2 text-center">Action</th>
+                    <th className="pb-3 px-2">AWB / Tracking</th><th className="pb-3 px-2">Sender</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -566,7 +680,7 @@ export default function App() {
           </div>
         )}
 
-        {/* CUSTOMERS TAB */}
+        {/* CUSTOMERS */}
         {activeTab === 'customers' && (
           <div className="max-w-7xl mx-auto">
             {!selectedCustomer ? (
@@ -575,11 +689,7 @@ export default function App() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="text-slate-400 border-b border-slate-700 text-sm">
-                      <th className="pb-3 px-2">Customer Name</th>
-                      <th className="pb-3 px-2">Phone</th>
-                      <th className="pb-3 px-2">Email</th>
-                      <th className="pb-3 px-2">Total Parcels</th>
-                      <th className="pb-3 px-2 text-center">Action</th>
+                      <th className="pb-3 px-2">Customer Name</th><th className="pb-3 px-2">Phone</th><th className="pb-3 px-2">Email</th><th className="pb-3 px-2">Total Parcels</th><th className="pb-3 px-2 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="text-sm">
@@ -600,25 +710,13 @@ export default function App() {
             ) : (
               <div>
                 {(() => {
-                  const metrics = getLedgerMetrics(selectedCustomer);
+                  const m = getLedgerMetrics(selectedCustomer);
                   return (
                     <div className="grid grid-cols-4 gap-4 mb-6">
-                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 font-medium">Outstanding Balance</p>
-                        <p className="text-xl font-black text-yellow-400 mt-1">Rs {metrics.totalOutstanding.toLocaleString()}</p>
-                      </div>
-                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 font-medium">Total Amount Paid</p>
-                        <p className="text-xl font-black text-green-400 mt-1">Rs {metrics.totalPaid.toLocaleString()}</p>
-                      </div>
-                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 font-medium">Net Profit</p>
-                        <p className="text-xl font-black text-emerald-400 mt-1">Rs {metrics.totalProfit.toLocaleString()}</p>
-                      </div>
-                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 font-medium">Total Shipments</p>
-                        <p className="text-xl font-black text-blue-400 mt-1">{metrics.totalCount} Parcels</p>
-                      </div>
+                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl"><p className="text-xs text-slate-400 font-medium">Outstanding Balance</p><p className="text-xl font-black text-yellow-400 mt-1">Rs {m.totalOutstanding.toLocaleString()}</p></div>
+                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl"><p className="text-xs text-slate-400 font-medium">Total Amount Paid</p><p className="text-xl font-black text-green-400 mt-1">Rs {m.totalPaid.toLocaleString()}</p></div>
+                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl"><p className="text-xs text-slate-400 font-medium">Net Profit</p><p className="text-xl font-black text-emerald-400 mt-1">Rs {m.totalProfit.toLocaleString()}</p></div>
+                      <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl"><p className="text-xs text-slate-400 font-medium">Total Shipments</p><p className="text-xl font-black text-blue-400 mt-1">{m.totalCount} Parcels</p></div>
                     </div>
                   );
                 })()}
@@ -635,35 +733,14 @@ export default function App() {
                   </div>
                   <div className="grid grid-cols-3 gap-4 bg-slate-950 p-4 rounded-lg mb-6 border border-slate-800">
                     <input type="text" className="bg-slate-900 border border-slate-700 rounded p-2 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="🔍 Search AWB, Receiver or Vendor No..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-slate-400">From:</span>
-                      <input type="date" className="bg-slate-900 border border-slate-700 rounded p-1.5 text-white flex-1" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-slate-400">To:</span>
-                      <input type="date" className="bg-slate-900 border border-slate-700 rounded p-1.5 text-white flex-1" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    </div>
+                    <div className="flex items-center gap-2 text-xs"><span className="text-slate-400">From:</span><input type="date" className="bg-slate-900 border border-slate-700 rounded p-1.5 text-white flex-1" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+                    <div className="flex items-center gap-2 text-xs"><span className="text-slate-400">To:</span><input type="date" className="bg-slate-900 border border-slate-700 rounded p-1.5 text-white flex-1" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs min-w-[1500px]">
                       <thead>
                         <tr className="text-slate-400 border-b border-slate-700 uppercase tracking-wider font-semibold">
-                          <th className="pb-3 px-2">S.No</th>
-                          <th className="pb-3 px-2">Date</th>
-                          <th className="pb-3 px-2">Service</th>
-                          <th className="pb-3 px-2">Nexora AWB</th>
-                          <th className="pb-3 px-2">Forwarding AWB</th>
-                          <th className="pb-3 px-2">Receiver</th>
-                          <th className="pb-3 px-2">Weight</th>
-                          <th className="pb-3 px-2">Destination</th>
-                          <th className="pb-3 px-2">Remote</th>
-                          <th className="pb-3 px-2 text-right">Debit</th>
-                          <th className="pb-3 px-2 text-right text-red-300">Remote Chg</th>
-                          <th className="pb-3 px-2 text-right text-orange-400">Petrol</th>
-                          <th className="pb-3 px-2 text-right text-green-400">Credit</th>
-                          <th className="pb-3 px-2 text-right text-yellow-400">Balance</th>
-                          <th className="pb-3 px-2 text-right text-emerald-400">Profit</th>
-                          <th className="pb-3 px-2 text-center">Action</th>
+                          <th className="pb-3 px-2">S.No</th><th className="pb-3 px-2">Date</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2">Nexora AWB</th><th className="pb-3 px-2">Forwarding AWB</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Weight</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Remote</th><th className="pb-3 px-2 text-right">Debit</th><th className="pb-3 px-2 text-right text-red-300">Remote Chg</th><th className="pb-3 px-2 text-right text-orange-400">Petrol</th><th className="pb-3 px-2 text-right text-green-400">Credit</th><th className="pb-3 px-2 text-right text-yellow-400">Balance</th><th className="pb-3 px-2 text-right text-emerald-400">Profit</th><th className="pb-3 px-2 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
@@ -677,11 +754,7 @@ export default function App() {
                             <td className="py-3 px-2 text-white font-medium">{item.receiver}</td>
                             <td className="py-3 px-2 font-mono">{item.weight || '0'} KG</td>
                             <td className="py-3 px-2 text-slate-300">{item.destination}</td>
-                            <td className="py-3 px-2">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${item.remote_status === 'Remote' ? 'bg-red-900/50 text-red-400 border border-red-500/30' : 'bg-slate-800 text-slate-400'}`}>
-                                {item.remote_status || 'Non-Remote'}
-                              </span>
-                            </td>
+                            <td className="py-3 px-2"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${item.remote_status === 'Remote' ? 'bg-red-900/50 text-red-400 border border-red-500/30' : 'bg-slate-800 text-slate-400'}`}>{item.remote_status || 'Non-Remote'}</span></td>
                             <td className="py-3 px-2 text-right font-mono text-slate-300">Rs {Number(item.debit || 0).toLocaleString()}</td>
                             <td className="py-3 px-2 text-right font-mono text-red-400">Rs {Number(item.remote_charges || 0).toLocaleString()}</td>
                             <td className="py-3 px-2 text-right font-mono text-orange-400">Rs {Number(item.petrol || 0).toLocaleString()}</td>
@@ -710,71 +783,21 @@ export default function App() {
           <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <h3 className="text-xl font-bold mb-4 text-yellow-400 border-b border-slate-700 pb-2">✅ Approve & Setup Shipment</h3>
             <form onSubmit={handleUpdate} className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <label className="text-xs text-slate-400">Sender Name</label>
-                <input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.sender_name} onChange={(e) => setEditFormData({...editFormData, sender_name: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">Receiver Name</label>
-                <input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.receiver_name} onChange={(e) => setEditFormData({...editFormData, receiver_name: e.target.value})} required />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">Destination</label>
-                <input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.destination} onChange={(e) => setEditFormData({...editFormData, destination: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">Weight (kg)</label>
-                <input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.weight} onChange={(e) => setEditFormData({...editFormData, weight: e.target.value})} />
-              </div>
+              <div><label className="text-xs text-slate-400">Sender Name</label><input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.sender_name} onChange={(e) => setEditFormData({...editFormData, sender_name: e.target.value})} /></div>
+              <div><label className="text-xs text-slate-400">Receiver Name</label><input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.receiver_name} onChange={(e) => setEditFormData({...editFormData, receiver_name: e.target.value})} required /></div>
+              <div><label className="text-xs text-slate-400">Destination</label><input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.destination} onChange={(e) => setEditFormData({...editFormData, destination: e.target.value})} /></div>
+              <div><label className="text-xs text-slate-400">Weight (kg)</label><input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.weight} onChange={(e) => setEditFormData({...editFormData, weight: e.target.value})} /></div>
               <div className="col-span-2 border-t border-slate-800 pt-3 mt-1 text-blue-400 font-bold">Forwarding & Route Vendor Details</div>
-              <div>
-                <label className="text-xs text-slate-400">Forward Vendor Partner</label>
-                <select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.forward_vendor} onChange={(e) => setEditFormData({...editFormData, forward_vendor: e.target.value})}>
-                  <option value="">Select Vendor</option>
-                  <option value="DHL">DHL Forwarding</option>
-                  <option value="FedEx">FedEx Express</option>
-                  <option value="UPS">UPS Cargo</option>
-                  <option value="Skynet">Skynet Network</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">Forwarding Tracking Number (AWB)</label>
-                <input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" placeholder="e.g. DHL-9832141" value={editFormData.forwarding_awb} onChange={(e) => setEditFormData({...editFormData, forwarding_awb: e.target.value})} />
-              </div>
+              <div><label className="text-xs text-slate-400">Forward Vendor Partner</label><select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.forward_vendor} onChange={(e) => setEditFormData({...editFormData, forward_vendor: e.target.value})}><option value="">Select Vendor</option><option value="DHL">DHL Forwarding</option><option value="FedEx">FedEx Express</option><option value="UPS">UPS Cargo</option><option value="Skynet">Skynet Network</option></select></div>
+              <div><label className="text-xs text-slate-400">Forwarding Tracking Number (AWB)</label><input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" placeholder="e.g. DHL-9832141" value={editFormData.forwarding_awb} onChange={(e) => setEditFormData({...editFormData, forwarding_awb: e.target.value})} /></div>
               <div className="col-span-2 border-t border-slate-800 pt-3 mt-1 text-emerald-400 font-bold">Ledger Accounts & Profit Tracking</div>
-              <div>
-                <label className="text-xs text-slate-400">Remote Status</label>
-                <select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.remote_status} onChange={(e) => setEditFormData({...editFormData, remote_status: e.target.value})}>
-                  <option value="Non-Remote">Non-Remote</option>
-                  <option value="Remote">Remote Area</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">Remote Charges</label>
-                <input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.remote_charges} onChange={(e) => setEditFormData({...editFormData, remote_charges: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">Debit Amount (Base Customer Rate)</label>
-                <input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.debit} onChange={(e) => setEditFormData({...editFormData, debit: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-xs text-slate-400">Petrol Surcharge</label>
-                <input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost</label>
-                <input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} />
-              </div>
-              <div>
-                <label className="text-xs text-green-400 font-bold">Credit Amount (Customer Paid)</label>
-                <input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-green-600 text-white font-mono" value={editFormData.credit} onChange={(e) => setEditFormData({...editFormData, credit: e.target.value})} />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs text-slate-400">Service Label</label>
-                <select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.service} onChange={(e) => setEditFormData({...editFormData, service: e.target.value})} required>
-                  <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
-                </select>
-              </div>
+              <div><label className="text-xs text-slate-400">Remote Status</label><select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.remote_status} onChange={(e) => setEditFormData({...editFormData, remote_status: e.target.value})}><option value="Non-Remote">Non-Remote</option><option value="Remote">Remote Area</option></select></div>
+              <div><label className="text-xs text-slate-400">Remote Charges</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.remote_charges} onChange={(e) => setEditFormData({...editFormData, remote_charges: e.target.value})} /></div>
+              <div><label className="text-xs text-slate-400">Debit Amount</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.debit} onChange={(e) => setEditFormData({...editFormData, debit: e.target.value})} /></div>
+              <div><label className="text-xs text-slate-400">Petrol Surcharge</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} /></div>
+              <div><label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
+              <div><label className="text-xs text-green-400 font-bold">Credit Amount</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-green-600 text-white font-mono" value={editFormData.credit} onChange={(e) => setEditFormData({...editFormData, credit: e.target.value})} /></div>
+              <div className="col-span-2"><label className="text-xs text-slate-400">Service Label</label><select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.service} onChange={(e) => setEditFormData({...editFormData, service: e.target.value})} required><option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option></select></div>
               <div className="col-span-2 flex gap-2 mt-4">
                 <button type="submit" className="flex-1 bg-green-600 py-2.5 rounded-lg font-bold hover:bg-green-500 transition-all text-white">✅ Approve & Save</button>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-700 py-2.5 rounded-lg font-bold hover:bg-slate-600 transition-all text-white">Cancel</button>
