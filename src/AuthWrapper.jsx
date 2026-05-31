@@ -62,13 +62,12 @@ export default function AuthWrapper() {
 
       // Step 2: profiles table mein save karo
       if (data?.user) {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          full_name: name,
-          email: email,
-          phone: phone,
-          created_at: new Date().toISOString()
-        });
+        await supabase.from('profiles').insert({
+  full_name: name,
+  email: email,
+  phone: phone,
+  created_at: new Date().toISOString()
+});
       }
 
       setError('✅ Account ban gaya! Ab Sign In karo.');
