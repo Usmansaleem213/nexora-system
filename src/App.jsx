@@ -33,7 +33,7 @@ export default function App() {
   const [trackingUpdates, setTrackingUpdates] = useState([]);
   const [selectedAwbShipment, setSelectedAwbShipment] = useState(null);
   const [newUpdate, setNewUpdate] = useState({
-    location: '', status: 'In Transit', description: ''
+    location: '', status: 'Picked Up', description: '', custom_time: ''
   });
   const [trackingMsg, setTrackingMsg] = useState('');
 
@@ -69,11 +69,43 @@ export default function App() {
     fetchProfiles();
   }, []);
 
+  // ─── TRACKING STATUS OPTIONS ───────────────────────────────────────────────
+  const trackingStatuses = [
+    { value: 'Shipment Booked',         label: '📋 Shipment Booked',           color: 'bg-blue-900/40 text-blue-400 border-blue-500/30',     dot: 'bg-blue-500' },
+    { value: 'Picked Up',               label: '🛵 Picked Up',                  color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/30',     dot: 'bg-cyan-500' },
+    { value: 'Arrived at Origin Hub',   label: '🏭 Arrived at Origin Hub',      color: 'bg-indigo-900/40 text-indigo-400 border-indigo-500/30', dot: 'bg-indigo-500' },
+    { value: 'Departed Origin',         label: '✈️ Departed Origin',            color: 'bg-violet-900/40 text-violet-400 border-violet-500/30', dot: 'bg-violet-500' },
+    { value: 'In Transit',              label: '🚚 In Transit',                  color: 'bg-yellow-900/40 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-500' },
+    { value: 'Arrived at Transit Hub',  label: '🔄 Arrived at Transit Hub',     color: 'bg-orange-900/40 text-orange-400 border-orange-500/30', dot: 'bg-orange-400' },
+    { value: 'Departed Transit Hub',    label: '🛫 Departed Transit Hub',       color: 'bg-pink-900/40 text-pink-400 border-pink-500/30',     dot: 'bg-pink-500' },
+    { value: 'Arrived at Destination',  label: '🛬 Arrived at Destination',     color: 'bg-teal-900/40 text-teal-400 border-teal-500/30',     dot: 'bg-teal-500' },
+    { value: 'Customs Clearance',       label: '🛃 Customs Clearance',          color: 'bg-purple-900/40 text-purple-400 border-purple-500/30', dot: 'bg-purple-500' },
+    { value: 'Customs Released',        label: '✅ Customs Released',           color: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
+    { value: 'Out for Delivery',        label: '🏃 Out for Delivery',           color: 'bg-lime-900/40 text-lime-400 border-lime-500/30',     dot: 'bg-lime-500' },
+    { value: 'Delivery Attempted',      label: '🔔 Delivery Attempted',         color: 'bg-amber-900/40 text-amber-400 border-amber-500/30',  dot: 'bg-amber-500' },
+    { value: 'Delivered',               label: '📬 Delivered',                  color: 'bg-green-900/40 text-green-400 border-green-500/30',  dot: 'bg-green-500' },
+    { value: 'Delayed',                 label: '⚠️ Delayed',                    color: 'bg-red-900/40 text-red-400 border-red-500/30',        dot: 'bg-red-500' },
+    { value: 'On Hold',                 label: '⏸️ On Hold',                    color: 'bg-slate-700/60 text-slate-300 border-slate-500/30',  dot: 'bg-slate-400' },
+    { value: 'Exception',               label: '🚨 Exception / Issue',          color: 'bg-red-900/60 text-red-300 border-red-400/40',        dot: 'bg-red-600' },
+  ];
+
+  const getStatusStyle = (statusValue) => {
+    return trackingStatuses.find(s => s.value === statusValue) || {
+      color: 'bg-slate-800 text-slate-400 border-slate-600',
+      dot: 'bg-slate-500'
+    };
+  };
+
   // TRACKING FUNCTIONS
   const handleSearchTracking = async (e) => {
     e.preventDefault();
     const shipment = ledgerData.find(s => s.nexora_airwaybill?.toLowerCase() === trackingAwb.toLowerCase());
-    if (!shipment) { setTrackingMsg('❌ Koi shipment nahi mila is AWB se'); setSelectedAwbShipment(null); setTrackingUpdates([]); return; }
+    if (!shipment) {
+      setTrackingMsg('❌ Koi shipment nahi mila is AWB se');
+      setSelectedAwbShipment(null);
+      setTrackingUpdates([]);
+      return;
+    }
     setSelectedAwbShipment(shipment);
     setTrackingMsg('');
     const { data } = await supabase
@@ -87,16 +119,19 @@ export default function App() {
   const handleAddTrackingUpdate = async (e) => {
     e.preventDefault();
     if (!selectedAwbShipment) return;
+    const insertTime = newUpdate.custom_time
+      ? new Date(newUpdate.custom_time).toISOString()
+      : new Date().toISOString();
     const { error } = await supabase.from('tracking_updates').insert([{
       awb: selectedAwbShipment.nexora_airwaybill,
       location: newUpdate.location,
       status: newUpdate.status,
       description: newUpdate.description,
-      created_at: new Date().toISOString()
+      created_at: insertTime
     }]);
     if (!error) {
       setTrackingMsg('✅ Tracking update add ho gaya!');
-      setNewUpdate({ location: '', status: 'In Transit', description: '' });
+      setNewUpdate({ location: '', status: 'Picked Up', description: '', custom_time: '' });
       const { data } = await supabase
         .from('tracking_updates')
         .select('*')
@@ -155,18 +190,32 @@ export default function App() {
 
   const getUniqueCustomers = () => {
     const customersMap = {};
+    profilesData.forEach(profile => {
+      if (profile.full_name) {
+        const nameKey = profile.full_name.trim();
+        customersMap[nameKey] = {
+          name: nameKey,
+          phone: profile.phone || 'N/A',
+          email: profile.email || 'N/A',
+          totalShipments: 0,
+          profileId: profile.id,
+          hasProfile: true
+        };
+      }
+    });
     ledgerData.forEach(item => {
       if (item.sender_name) {
         const nameKey = item.sender_name.trim();
         if (!customersMap[nameKey]) {
-          customersMap[nameKey] = { name: nameKey, phone: item.sender_phone || 'N/A', email: item.sender_email || 'N/A', totalShipments: 0 };
+          customersMap[nameKey] = {
+            name: nameKey,
+            phone: item.sender_phone || 'N/A',
+            email: item.sender_email || 'N/A',
+            totalShipments: 0,
+            hasProfile: false
+          };
         }
         customersMap[nameKey].totalShipments += 1;
-      }
-    });
-    profilesData.forEach(profile => {
-      if (profile.full_name && !customersMap[profile.full_name.trim()]) {
-        customersMap[profile.full_name.trim()] = { name: profile.full_name.trim(), phone: profile.phone || 'N/A', email: profile.email || 'N/A', totalShipments: 0 };
       }
     });
     return Object.values(customersMap);
@@ -274,15 +323,6 @@ export default function App() {
   };
 
   const metrics = getDashboardMetrics();
-
-  const statusColors = {
-    'Shipment Booked': 'bg-blue-900/40 text-blue-400 border-blue-500/30',
-    'In Transit': 'bg-yellow-900/40 text-yellow-400 border-yellow-500/30',
-    'Out for Delivery': 'bg-orange-900/40 text-orange-400 border-orange-500/30',
-    'Customs Clearance': 'bg-purple-900/40 text-purple-400 border-purple-500/30',
-    'Delivered': 'bg-green-900/40 text-green-400 border-green-500/30',
-    'Delayed': 'bg-red-900/40 text-red-400 border-red-500/30',
-  };
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-white font-sans">
@@ -407,11 +447,11 @@ export default function App() {
           </div>
         )}
 
-        {/* TRACKING CONTROL TAB */}
+        {/* ─── TRACKING CONTROL TAB ──────────────────────────────────────────── */}
         {activeTab === 'tracking_control' && (
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">🗺️ Tracking Control Panel</h2>
-            <p className="text-slate-400 mb-6">Kisi bhi shipment ki location manually update karo</p>
+            <p className="text-slate-400 mb-6">Kisi bhi shipment ki location aur status manually update karo</p>
 
             {/* SEARCH AWB */}
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
@@ -447,42 +487,57 @@ export default function App() {
 
                 {/* ADD NEW UPDATE */}
                 <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
-                  <h3 className="font-bold text-slate-300 mb-4">Step 2: Naya Location Update Add Karo</h3>
+                  <h3 className="font-bold text-slate-300 mb-4">Step 2: Naya Tracking Update Add Karo</h3>
                   <form onSubmit={handleAddTrackingUpdate} className="grid grid-cols-2 gap-4">
+
+                    {/* Status Dropdown */}
                     <div>
-                      <label className="text-xs text-slate-400">Location *</label>
+                      <label className="text-xs text-slate-400 mb-1 block">Status *</label>
+                      <select
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                        value={newUpdate.status}
+                        onChange={(e) => setNewUpdate({...newUpdate, status: e.target.value})}
+                      >
+                        {trackingStatuses.map(s => (
+                          <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Location */}
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Location *</label>
                       <input
-                        className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                        placeholder="e.g. Karachi, Pakistan"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                        placeholder="e.g. Paris, France"
                         value={newUpdate.location}
                         onChange={(e) => setNewUpdate({...newUpdate, location: e.target.value})}
                         required
                       />
                     </div>
+
+                    {/* Description */}
                     <div>
-                      <label className="text-xs text-slate-400">Status *</label>
-                      <select
-                        className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                        value={newUpdate.status}
-                        onChange={(e) => setNewUpdate({...newUpdate, status: e.target.value})}
-                      >
-                        <option value="Shipment Booked">📋 Shipment Booked</option>
-                        <option value="In Transit">🚚 In Transit</option>
-                        <option value="Customs Clearance">🛃 Customs Clearance</option>
-                        <option value="Out for Delivery">🏃 Out for Delivery</option>
-                        <option value="Delivered">✅ Delivered</option>
-                        <option value="Delayed">⚠️ Delayed</option>
-                      </select>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-xs text-slate-400">Description</label>
+                      <label className="text-xs text-slate-400 mb-1 block">Description / Note</label>
                       <input
-                        className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                        placeholder="e.g. Package has departed from Karachi airport"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                        placeholder="e.g. Package has arrived at Charles de Gaulle Airport"
                         value={newUpdate.description}
                         onChange={(e) => setNewUpdate({...newUpdate, description: e.target.value})}
                       />
                     </div>
+
+                    {/* Custom Date/Time */}
+                    <div>
+                      <label className="text-xs text-slate-400 mb-1 block">Date & Time (optional — default: now)</label>
+                      <input
+                        type="datetime-local"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                        value={newUpdate.custom_time}
+                        onChange={(e) => setNewUpdate({...newUpdate, custom_time: e.target.value})}
+                      />
+                    </div>
+
                     {trackingMsg && (
                       <div className={`col-span-2 text-xs p-3 rounded-lg ${trackingMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
                         {trackingMsg}
@@ -496,38 +551,70 @@ export default function App() {
                   </form>
                 </div>
 
-                {/* EXISTING UPDATES TIMELINE */}
+                {/* TIMELINE */}
                 <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
-                  <h3 className="font-bold text-slate-300 mb-4">📍 Current Tracking Timeline ({trackingUpdates.length} updates)</h3>
+                  <h3 className="font-bold text-slate-300 mb-5">
+                    📍 Live Tracking Timeline
+                    <span className="ml-2 text-xs bg-purple-900/50 text-purple-400 border border-purple-700 px-2 py-0.5 rounded-full font-normal">
+                      {trackingUpdates.length} updates
+                    </span>
+                  </h3>
+
                   {trackingUpdates.length === 0 ? (
-                    <p className="text-slate-400 text-sm text-center py-4">Abhi koi tracking update nahi hai</p>
+                    <p className="text-slate-400 text-sm text-center py-8">Abhi koi tracking update nahi hai</p>
                   ) : (
-                    <div className="space-y-3">
-                      {trackingUpdates.map((update, idx) => (
-                        <div key={update.id} className="flex items-start gap-4 bg-slate-800/40 rounded-lg p-4">
-                          <div className="flex flex-col items-center">
-                            <div className="w-3 h-3 rounded-full bg-purple-500 mt-1"></div>
-                            {idx < trackingUpdates.length - 1 && <div className="w-0.5 h-full bg-slate-700 mt-1"></div>}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <span className={`text-xs px-2 py-0.5 rounded border font-bold ${statusColors[update.status] || 'bg-slate-800 text-slate-400 border-slate-600'}`}>
-                                  {update.status}
-                                </span>
-                                <p className="font-bold text-white mt-1">📍 {update.location}</p>
-                                {update.description && <p className="text-slate-400 text-xs mt-1">{update.description}</p>}
-                                <p className="text-slate-500 text-xs mt-1">{new Date(update.created_at).toLocaleString()}</p>
+                    <div className="relative">
+                      {/* vertical line */}
+                      <div className="absolute left-[18px] top-2 bottom-2 w-0.5 bg-slate-700 rounded-full"></div>
+
+                      <div className="space-y-1">
+                        {trackingUpdates.map((update, idx) => {
+                          const style = getStatusStyle(update.status);
+                          const isLatest = idx === 0;
+                          return (
+                            <div key={update.id} className={`flex gap-4 relative pl-10 pb-5 ${isLatest ? '' : 'opacity-75'}`}>
+                              {/* dot */}
+                              <div className={`absolute left-[11px] top-1.5 w-4 h-4 rounded-full border-2 border-slate-900 ${style.dot} ${isLatest ? 'ring-2 ring-offset-1 ring-offset-slate-900 ring-purple-400' : ''}`}></div>
+
+                              <div className={`flex-1 rounded-xl p-4 border ${isLatest ? 'bg-slate-800/60 border-slate-600' : 'bg-slate-800/20 border-slate-700/50'}`}>
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    {/* Status badge */}
+                                    <span className={`inline-block text-xs px-2 py-0.5 rounded border font-bold mb-2 ${style.color}`}>
+                                      {update.status}
+                                    </span>
+                                    {isLatest && (
+                                      <span className="ml-2 text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">LATEST</span>
+                                    )}
+                                    {/* Location */}
+                                    <p className="font-bold text-white text-sm">📍 {update.location}</p>
+                                    {/* Description */}
+                                    {update.description && (
+                                      <p className="text-slate-400 text-xs mt-1">{update.description}</p>
+                                    )}
+                                    {/* Time */}
+                                    <p className="text-slate-500 text-xs mt-1.5">
+                                      🕐 {new Date(update.created_at).toLocaleString('en-PK', {
+                                        day: '2-digit', month: 'short', year: 'numeric',
+                                        hour: '2-digit', minute: '2-digit'
+                                      })}
+                                    </p>
+                                  </div>
+                                  {/* Delete */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteTrackingUpdate(update.id)}
+                                    className="text-red-500/50 hover:text-red-400 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all flex-shrink-0"
+                                    title="Delete this update"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
                               </div>
-                              <button type="button"
-                                onClick={() => handleDeleteTrackingUpdate(update.id)}
-                                className="text-red-400 hover:text-red-300 text-xs font-bold ml-4">
-                                🗑️ Del
-                              </button>
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -699,9 +786,19 @@ export default function App() {
                         <td className="py-3.5 px-2 text-slate-300">{cust.phone}</td>
                         <td className="py-3.5 px-2 text-slate-300">{cust.email}</td>
                         <td className="py-3.5 px-2 font-mono"><span className="bg-slate-800 px-2 py-0.5 rounded text-green-400 font-bold">{cust.totalShipments}</span></td>
-                        <td className="py-3.5 px-2 text-center">
-                          <button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 hover:text-white transition-all">View Ledger</button>
-                        </td>
+                        <td className="py-3.5 px-2 text-center flex gap-2 justify-center">
+  <button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 hover:text-white transition-all">View Ledger</button>
+  <button type="button" onClick={async () => {
+    if(window.confirm(`"${cust.name}" ko directory se hatana chahte ho? Shipment data safe rahega.`)) {
+      if (cust.hasProfile) {
+        await supabase.from('profiles').delete().eq('id', cust.profileId);
+        fetchProfiles();
+      } else {
+        alert('Yeh customer sirf ledger mein hai, profile nahi hai — delete nahi ho sakta.');
+      }
+    }
+  }} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-600 hover:text-white transition-all">🗑️ Del</button>
+</td>
                       </tr>
                     ))}
                   </tbody>

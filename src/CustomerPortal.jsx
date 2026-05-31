@@ -34,9 +34,7 @@ export default function CustomerPortal({ session, onLogout }) {
   const handleNewShipment = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-
     const awb = 'NX-REQ-' + Math.floor(100000 + Math.random() * 900000);
-
     const { error } = await supabase.from('customer_ledgers').insert([{
       sender_name: customerName,
       sender_email: customerEmail,
@@ -52,18 +50,12 @@ export default function CustomerPortal({ session, onLogout }) {
       debit: 0, credit: 0, petrol: 0, remote_charges: 0, buying_rate: 0,
       forwarding_awb: '', forward_vendor: ''
     }]);
-
     if (!error) {
       setGeneratedLabel({
-        awb,
-        sender_name: customerName,
-        sender_email: customerEmail,
-        receiver_name: formData.receiver_name,
-        receiver_address: formData.receiver_address,
-        receiver_phone: formData.receiver_phone,
-        destination: formData.destination,
-        weight: formData.weight,
-        service: formData.service,
+        awb, sender_name: customerName, sender_email: customerEmail,
+        receiver_name: formData.receiver_name, receiver_address: formData.receiver_address,
+        receiver_phone: formData.receiver_phone, destination: formData.destination,
+        weight: formData.weight, service: formData.service,
         date: new Date().toLocaleDateString()
       });
       setFormData({ receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '', destination: '', weight: '', service: '', notes: '' });
@@ -74,41 +66,11 @@ export default function CustomerPortal({ session, onLogout }) {
 
   const handleDownloadLabel = () => {
     const label = generatedLabel;
-    const html = `
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          .label { border: 4px solid black; padding: 24px; max-width: 500px; margin: auto; }
-          .title { font-size: 28px; font-weight: 900; }
-          .awb { font-size: 22px; font-weight: 900; border-top: 2px solid black; border-bottom: 2px solid black; padding: 10px 0; margin: 12px 0; }
-          .row { margin: 6px 0; font-size: 14px; }
-          .label-bottom { margin-top: 16px; font-size: 12px; color: #555; }
-        </style>
-      </head>
-      <body>
-        <div class="label">
-          <div class="title">NEXORA LOGISTICS</div>
-          <div class="awb">${label.awb}</div>
-          <div class="row"><strong>From:</strong> ${label.sender_name}</div>
-          <div class="row"><strong>To:</strong> ${label.receiver_name}</div>
-          <div class="row"><strong>Address:</strong> ${label.receiver_address}</div>
-          <div class="row"><strong>Phone:</strong> ${label.receiver_phone}</div>
-          <div class="row"><strong>Destination:</strong> ${label.destination}</div>
-          <div class="row"><strong>Weight:</strong> ${label.weight} KG</div>
-          <div class="row"><strong>Service:</strong> ${label.service}</div>
-          <div class="row"><strong>Date:</strong> ${label.date}</div>
-          <div class="label-bottom">This is a Nexora booking reference. Final carrier label will be provided separately.</div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = `<html><head><style>body{font-family:Arial,sans-serif;padding:20px}.label{border:4px solid black;padding:24px;max-width:500px;margin:auto}.title{font-size:28px;font-weight:900}.awb{font-size:22px;font-weight:900;border-top:2px solid black;border-bottom:2px solid black;padding:10px 0;margin:12px 0}.row{margin:6px 0;font-size:14px}.label-bottom{margin-top:16px;font-size:12px;color:#555}</style></head><body><div class="label"><div class="title">NEXORA LOGISTICS</div><div class="awb">${label.awb}</div><div class="row"><strong>From:</strong> ${label.sender_name}</div><div class="row"><strong>To:</strong> ${label.receiver_name}</div><div class="row"><strong>Address:</strong> ${label.receiver_address}</div><div class="row"><strong>Phone:</strong> ${label.receiver_phone}</div><div class="row"><strong>Destination:</strong> ${label.destination}</div><div class="row"><strong>Weight:</strong> ${label.weight} KG</div><div class="row"><strong>Service:</strong> ${label.service}</div><div class="row"><strong>Date:</strong> ${label.date}</div><div class="label-bottom">This is a Nexora booking reference. Final carrier label will be provided separately.</div></div></body></html>`;
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `Nexora_Label_${label.awb}.html`;
-    a.click();
+    a.href = url; a.download = `Nexora_Label_${label.awb}.html`; a.click();
   };
 
   const totalSpending = shipments.reduce((sum, s) => sum + Number(s.debit || 0) + Number(s.petrol || 0) + Number(s.remote_charges || 0), 0);
@@ -127,14 +89,14 @@ export default function CustomerPortal({ session, onLogout }) {
           </div>
           <nav className="p-4 space-y-2">
             {[
-              { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+              { id: 'dashboard',    icon: '📊', label: 'Dashboard' },
               { id: 'new_shipment', icon: '📦', label: 'New Shipment' },
               { id: 'my_shipments', icon: '📑', label: 'My Shipments' },
-              { id: 'tracking', icon: '🔍', label: 'Track Parcel' },
-              { id: 'profile', icon: '👤', label: 'My Profile' },
+              { id: 'tracking',     icon: '🔍', label: 'Track Parcel' },
+              { id: 'profile',      icon: '👤', label: 'My Profile' },
             ].map(tab => (
               <button key={tab.id} type="button"
-                onClick={() => { setActiveTab(tab.id); if(tab.id !== 'new_shipment') setGeneratedLabel(null); }}
+                onClick={() => { setActiveTab(tab.id); if (tab.id !== 'new_shipment') setGeneratedLabel(null); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
                 <span>{tab.icon}</span> {tab.label}
               </button>
@@ -273,23 +235,18 @@ export default function CustomerPortal({ session, onLogout }) {
                 </div>
               </>
             ) : (
-              /* LABEL VIEW */
               <div>
                 <h2 className="text-2xl font-black text-white mb-2">✅ Shipment Booked!</h2>
                 <p className="text-slate-400 mb-6">Your label is ready — save or print it</p>
-
-                {/* LABEL CARD */}
                 <div ref={labelRef} className="bg-white text-black p-8 rounded-xl border-4 border-black shadow-2xl max-w-md mx-auto mb-6">
                   <div className="border-b-2 border-black pb-3 mb-4">
                     <h1 className="text-2xl font-black tracking-widest">NEXORA LOGISTICS</h1>
                     <p className="text-xs text-gray-500">Courier & International Shipping</p>
                   </div>
-
                   <div className="bg-black text-white text-center py-3 px-4 rounded mb-4">
                     <p className="text-xs font-bold text-gray-300 mb-1">BOOKING REFERENCE</p>
                     <p className="text-xl font-black font-mono tracking-wider">{generatedLabel.awb}</p>
                   </div>
-
                   <div className="grid grid-cols-2 gap-3 text-sm mb-4">
                     <div className="bg-gray-50 p-2 rounded">
                       <p className="text-xs text-gray-400 font-bold">FROM</p>
@@ -300,14 +257,12 @@ export default function CustomerPortal({ session, onLogout }) {
                       <p className="font-black text-blue-700">{generatedLabel.service}</p>
                     </div>
                   </div>
-
                   <div className="border-2 border-black rounded p-3 mb-4">
                     <p className="text-xs text-gray-500 font-bold mb-1">DELIVER TO</p>
                     <p className="text-lg font-black">{generatedLabel.receiver_name}</p>
                     <p className="text-sm text-gray-600">{generatedLabel.receiver_address}</p>
                     <p className="text-sm font-bold">{generatedLabel.receiver_phone}</p>
                   </div>
-
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-xs text-gray-400 font-bold">DESTINATION</p>
@@ -318,13 +273,10 @@ export default function CustomerPortal({ session, onLogout }) {
                       <p className="font-black text-lg">{generatedLabel.weight} KG</p>
                     </div>
                   </div>
-
                   <div className="border-t border-gray-300 mt-4 pt-3 text-xs text-gray-400 text-center">
                     Date: {generatedLabel.date} • nexora-logistics.com
                   </div>
                 </div>
-
-                {/* ACTION BUTTONS */}
                 <div className="flex gap-3 max-w-md mx-auto">
                   <button type="button" onClick={handleDownloadLabel}
                     className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition-all text-sm">
@@ -360,8 +312,7 @@ export default function CustomerPortal({ session, onLogout }) {
                   const csv = `S.No,AWB,Receiver,Destination,Service,Debit,Credit,Date\n${rows}`;
                   const blob = new Blob([csv], { type: 'text/csv' });
                   const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url; a.download = 'nexora_ledger.csv'; a.click();
+                  const a = document.createElement('a'); a.href = url; a.download = 'nexora_ledger.csv'; a.click();
                 }}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">
                 📥 Download CSV
@@ -374,7 +325,7 @@ export default function CustomerPortal({ session, onLogout }) {
                     <th className="pb-3 px-2">S.No</th>
                     <th className="pb-3 px-2">Date</th>
                     <th className="pb-3 px-2">AWB</th>
-                    <th className className="pb-3 px-2">Receiver</th>
+                    <th className="pb-3 px-2">Receiver</th>
                     <th className="pb-3 px-2">Destination</th>
                     <th className="pb-3 px-2">Service</th>
                     <th className="pb-3 px-2 text-right">Amount</th>
@@ -410,11 +361,11 @@ export default function CustomerPortal({ session, onLogout }) {
           </div>
         )}
 
-        {/* TRACKING */}
+        {/* ─── TRACKING ──────────────────────────────────────────────────────── */}
         {activeTab === 'tracking' && (
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">Track Your Parcel 🔍</h2>
-            <p className="text-slate-400 mb-6">Enter your Nexora AWB number to track</p>
+            <p className="text-slate-400 mb-6">Enter your Nexora AWB number to see live tracking</p>
             <TrackingSection shipments={shipments} />
           </div>
         )}
@@ -454,64 +405,241 @@ export default function CustomerPortal({ session, onLogout }) {
   );
 }
 
+// ─── TRACKING SECTION COMPONENT ────────────────────────────────────────────────
 function TrackingSection({ shipments }) {
   const [trackingNo, setTrackingNo] = useState('');
   const [result, setResult] = useState(null);
   const [notFound, setNotFound] = useState(false);
+  const [trackingUpdates, setTrackingUpdates] = useState([]);
+  const [loadingUpdates, setLoadingUpdates] = useState(false);
 
-  const handleTrack = (e) => {
-    e.preventDefault();
-    const found = shipments.find(s =>
-      s.nexora_airwaybill?.toLowerCase() === trackingNo.toLowerCase()
-    );
-    if (found) { setResult(found); setNotFound(false); }
-    else { setResult(null); setNotFound(true); }
+  // All possible statuses with their styles
+  const statusStyleMap = {
+    'Shipment Booked':        { color: 'bg-blue-900/40 text-blue-400 border-blue-500/30',       dot: 'bg-blue-500',    icon: '📋' },
+    'Picked Up':              { color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/30',       dot: 'bg-cyan-500',    icon: '🛵' },
+    'Arrived at Origin Hub':  { color: 'bg-indigo-900/40 text-indigo-400 border-indigo-500/30', dot: 'bg-indigo-500',  icon: '🏭' },
+    'Departed Origin':        { color: 'bg-violet-900/40 text-violet-400 border-violet-500/30', dot: 'bg-violet-500',  icon: '✈️' },
+    'In Transit':             { color: 'bg-yellow-900/40 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-500',  icon: '🚚' },
+    'Arrived at Transit Hub': { color: 'bg-orange-900/40 text-orange-400 border-orange-500/30', dot: 'bg-orange-400',  icon: '🔄' },
+    'Departed Transit Hub':   { color: 'bg-pink-900/40 text-pink-400 border-pink-500/30',       dot: 'bg-pink-500',    icon: '🛫' },
+    'Arrived at Destination': { color: 'bg-teal-900/40 text-teal-400 border-teal-500/30',       dot: 'bg-teal-500',    icon: '🛬' },
+    'Customs Clearance':      { color: 'bg-purple-900/40 text-purple-400 border-purple-500/30', dot: 'bg-purple-500',  icon: '🛃' },
+    'Customs Released':       { color: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400', icon: '✅' },
+    'Out for Delivery':       { color: 'bg-lime-900/40 text-lime-400 border-lime-500/30',       dot: 'bg-lime-500',    icon: '🏃' },
+    'Delivery Attempted':     { color: 'bg-amber-900/40 text-amber-400 border-amber-500/30',    dot: 'bg-amber-500',   icon: '🔔' },
+    'Delivered':              { color: 'bg-green-900/40 text-green-400 border-green-500/30',    dot: 'bg-green-500',   icon: '📬' },
+    'Delayed':                { color: 'bg-red-900/40 text-red-400 border-red-500/30',          dot: 'bg-red-500',     icon: '⚠️' },
+    'On Hold':                { color: 'bg-slate-700/60 text-slate-300 border-slate-500/30',    dot: 'bg-slate-400',   icon: '⏸️' },
+    'Exception':              { color: 'bg-red-900/60 text-red-300 border-red-400/40',          dot: 'bg-red-600',     icon: '🚨' },
   };
+
+  const getStyle = (status) =>
+    statusStyleMap[status] || { color: 'bg-slate-800 text-slate-400 border-slate-600', dot: 'bg-slate-500', icon: '📍' };
+
+  const handleTrack = async (e) => {
+    e.preventDefault();
+    // Search in customer's own shipments first, then allow any AWB
+    const found = shipments.find(s =>
+      s.nexora_airwaybill?.toLowerCase() === trackingNo.trim().toLowerCase()
+    );
+
+    if (found) {
+      setResult(found);
+      setNotFound(false);
+    } else {
+      // Try fetching from DB even if not in current customer's shipments
+      const { data } = await supabase
+        .from('customer_ledgers')
+        .select('*')
+        .ilike('nexora_airwaybill', trackingNo.trim())
+        .single();
+      if (data) {
+        setResult(data);
+        setNotFound(false);
+      } else {
+        setResult(null);
+        setNotFound(true);
+        setTrackingUpdates([]);
+        return;
+      }
+    }
+
+    // Fetch tracking updates from tracking_updates table
+    setLoadingUpdates(true);
+    const { data: updates } = await supabase
+      .from('tracking_updates')
+      .select('*')
+      .ilike('awb', trackingNo.trim())
+      .order('created_at', { ascending: false });
+    if (updates) setTrackingUpdates(updates);
+    setLoadingUpdates(false);
+  };
+
+  // Latest status
+  const latestStatus = trackingUpdates.length > 0 ? trackingUpdates[0].status : null;
+  const latestStyle = latestStatus ? getStyle(latestStatus) : null;
 
   return (
     <div>
+      {/* Search Box */}
       <form onSubmit={handleTrack} className="flex gap-3 mb-6">
         <input
           className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
-          placeholder="Enter Nexora AWB e.g. NX-123456"
+          placeholder="Enter Nexora AWB e.g. NX-123456789"
           value={trackingNo}
           onChange={(e) => setTrackingNo(e.target.value)}
           required
         />
         <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 rounded-lg transition-all">
-          Track
+          🔍 Track
         </button>
       </form>
 
       {notFound && (
         <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 text-red-400 text-sm">
-          ❌ No shipment found with this tracking number.
+          ❌ No shipment found with this AWB number.
         </div>
       )}
 
       {result && (
-        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-xs text-slate-400">Nexora AWB</p>
-              <p className="text-xl font-black font-mono text-blue-400">{result.nexora_airwaybill}</p>
+        <div className="space-y-4">
+
+          {/* Shipment Summary Card */}
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-xs text-slate-400 mb-1">Nexora AWB</p>
+                <p className="text-xl font-black font-mono text-blue-400">{result.nexora_airwaybill}</p>
+              </div>
+              {latestStatus ? (
+                <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${latestStyle.color}`}>
+                  {getStyle(latestStatus).icon} {latestStatus}
+                </span>
+              ) : (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-900/40 text-yellow-400 border border-yellow-700">
+                  ⏳ Processing
+                </span>
+              )}
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${result.forwarding_awb ? 'bg-green-900/40 text-green-400 border border-green-700' : 'bg-yellow-900/40 text-yellow-400 border border-yellow-700'}`}>
-              {result.forwarding_awb ? '✈️ Dispatched' : '⏳ Processing'}
-            </span>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><p className="text-xs text-slate-400">Receiver</p><p className="text-white font-medium">{result.receiver}</p></div>
+              <div><p className="text-xs text-slate-400">Destination</p><p className="text-white font-medium">{result.destination}</p></div>
+              <div><p className="text-xs text-slate-400">Service</p><p className="text-blue-400 font-bold">{result.service}</p></div>
+              <div><p className="text-xs text-slate-400">Weight</p><p className="text-white font-medium">{result.weight} KG</p></div>
+              {result.forwarding_awb && (
+                <div className="col-span-2">
+                  <p className="text-xs text-slate-400">Carrier AWB</p>
+                  <p className="text-emerald-400 font-mono font-bold">{result.forward_vendor}: {result.forwarding_awb}</p>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><p className="text-xs text-slate-400">Receiver</p><p className="text-white font-medium">{result.receiver}</p></div>
-            <div><p className="text-xs text-slate-400">Destination</p><p className="text-white font-medium">{result.destination}</p></div>
-            <div><p className="text-xs text-slate-400">Service</p><p className="text-blue-400 font-bold">{result.service}</p></div>
-            <div><p className="text-xs text-slate-400">Weight</p><p className="text-white font-medium">{result.weight} KG</p></div>
-            {result.forwarding_awb && (
-              <div className="col-span-2">
-                <p className="text-xs text-slate-400">Carrier AWB</p>
-                <p className="text-emerald-400 font-mono font-bold">{result.forward_vendor}: {result.forwarding_awb}</p>
+
+          {/* Tracking Timeline */}
+          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+            <h3 className="font-bold text-slate-200 mb-5 flex items-center gap-2">
+              📍 Tracking Timeline
+              {loadingUpdates && <span className="text-xs text-slate-500 font-normal">Loading...</span>}
+            </h3>
+
+            {!loadingUpdates && trackingUpdates.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-3xl mb-3">📦</p>
+                <p className="text-slate-400 text-sm font-medium">Shipment is being processed</p>
+                <p className="text-slate-500 text-xs mt-1">Tracking updates will appear here once your parcel is on the move</p>
+              </div>
+            )}
+
+            {trackingUpdates.length > 0 && (
+              <div className="relative">
+                {/* Vertical line */}
+                <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-slate-700/60 rounded-full"></div>
+
+                <div className="space-y-0">
+                  {trackingUpdates.map((update, idx) => {
+                    const style = getStyle(update.status);
+                    const isLatest = idx === 0;
+                    return (
+                      <div key={update.id} className={`flex gap-4 relative pl-9 pb-6 ${isLatest ? '' : 'opacity-70'}`}>
+
+                        {/* Timeline dot */}
+                        <div className={`
+                          absolute left-[8px] top-1 w-[15px] h-[15px] rounded-full border-2 border-slate-900 flex-shrink-0
+                          ${style.dot}
+                          ${isLatest ? 'ring-2 ring-offset-1 ring-offset-slate-900 ring-white/30 shadow-lg' : ''}
+                        `}></div>
+
+                        {/* Card */}
+                        <div className={`
+                          flex-1 rounded-xl p-4 border transition-all
+                          ${isLatest
+                            ? 'bg-slate-800/80 border-slate-500/60 shadow-md'
+                            : 'bg-slate-800/20 border-slate-700/30'
+                          }
+                        `}>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            {/* Status badge */}
+                            <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border font-bold ${style.color}`}>
+                              <span>{style.icon}</span>
+                              {update.status}
+                            </span>
+                            {isLatest && (
+                              <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold tracking-wide flex-shrink-0">
+                                LATEST
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Location */}
+                          <p className={`font-bold text-sm ${isLatest ? 'text-white' : 'text-slate-300'}`}>
+                            📍 {update.location}
+                          </p>
+
+                          {/* Description */}
+                          {update.description && (
+                            <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                              {update.description}
+                            </p>
+                          )}
+
+                          {/* Time */}
+                          <p className="text-slate-500 text-xs mt-2 flex items-center gap-1">
+                            🕐 {new Date(update.created_at).toLocaleString('en-PK', {
+                              weekday: 'short',
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Origin point at bottom */}
+                  <div className="flex gap-4 relative pl-9">
+                    <div className="absolute left-[8px] top-1 w-[15px] h-[15px] rounded-full border-2 border-slate-700 bg-slate-600 flex-shrink-0"></div>
+                    <div className="flex-1 pb-2">
+                      <p className="text-slate-500 text-xs font-medium">
+                        📋 Shipment registered in Nexora system
+                      </p>
+                      {result.created_at && (
+                        <p className="text-slate-600 text-xs mt-0.5">
+                          {new Date(result.created_at).toLocaleString('en-PK', {
+                            day: '2-digit', month: 'short', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
+
         </div>
       )}
     </div>
