@@ -108,12 +108,15 @@ export default function AuthWrapper() {
 
           {/* Contact Info Bar */}
           <div className="flex justify-center gap-4 mt-4">
-            <a href="tel:+922131234567" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
-              📞 +92 321 000 0000
-            </a>
-            <a href="mailto:info@nexora.pk" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
-              ✉️ info@nexora.pk
-            </a>
+            <a href="tel:+923350961234" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
+  📞 +92 335 096 1234
+</a>
+<a href="https://wa.me/923350961234" target="_blank" className="flex items-center gap-1 text-xs text-slate-400 hover:text-green-400 transition-all">
+  💬 WhatsApp
+</a>
+<a href="mailto:nexora85@gmail.com" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
+  ✉️ nexora85@gmail.com
+</a>
           </div>
           <p className="text-xs text-slate-500 mt-1">📍 Karachi, Pakistan</p>
         </div>
@@ -221,6 +224,12 @@ export default function AuthWrapper() {
         <button type="button" onClick={handleLogout} className="text-xs bg-red-600 hover:bg-red-500 text-white font-bold px-3 py-1.5 rounded-md transition-all">
           Logout
         </button>
+      </div>
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 border-t border-slate-800 py-2 px-6 flex justify-center gap-6">
+        <a href="tel:+923350961234" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">📞 +92 335 096 1234</a>
+        <a href="https://wa.me/923350961234" target="_blank" className="flex items-center gap-1 text-xs text-slate-400 hover:text-green-400 transition-all">💬 WhatsApp</a>
+        <a href="mailto:nexora85@gmail.com" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">✉️ nexora85@gmail.com</a>
+        <span className="text-xs text-slate-600">📍 Karachi, Pakistan</span>
       </div>
       <App />
     </div>
