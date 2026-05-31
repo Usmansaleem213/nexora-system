@@ -108,10 +108,10 @@ export default function AuthWrapper() {
 
           {/* Contact Info Bar */}
           <div className="flex justify-center gap-4 mt-4">
-            <a href="tel:+923350961234" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
+            <a href="tel:+923350961243" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
   📞 +92 335 096 1234
 </a>
-<a href="https://wa.me/923350961234" target="_blank" className="flex items-center gap-1 text-xs text-slate-400 hover:text-green-400 transition-all">
+<a href="https://wa.me/923350961243" target="_blank" className="flex items-center gap-1 text-xs text-slate-400 hover:text-green-400 transition-all">
   💬 WhatsApp
 </a>
 <a href="mailto:nexora85@gmail.com" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
@@ -226,8 +226,8 @@ export default function AuthWrapper() {
         </button>
       </div>
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 border-t border-slate-800 py-2 px-6 flex justify-center gap-6">
-        <a href="tel:+923350961234" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">📞 +92 335 096 1234</a>
-        <a href="https://wa.me/923350961234" target="_blank" className="flex items-center gap-1 text-xs text-slate-400 hover:text-green-400 transition-all">💬 WhatsApp</a>
+        <a href="tel:+923350961243" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">📞 +92 335 096 1234</a>
+        <a href="https://wa.me/923350961243" target="_blank" className="flex items-center gap-1 text-xs text-slate-400 hover:text-green-400 transition-all">💬 WhatsApp</a>
         <a href="mailto:nexora85@gmail.com" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">✉️ nexora85@gmail.com</a>
         <span className="text-xs text-slate-600">📍 Karachi, Pakistan</span>
       </div>
