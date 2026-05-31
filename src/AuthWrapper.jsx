@@ -11,6 +11,7 @@ export default function AuthWrapper() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -46,13 +47,31 @@ export default function AuthWrapper() {
     setSubmitting(true);
 
     if (isSignup) {
-      const { error } = await supabase.auth.signUp({
+      // Step 1: Supabase auth signup
+      const { data, error: signupError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name } }
+        options: { data: { full_name: name, phone } }
       });
-      if (error) setError(error.message);
-      else setError('✅ Account ban gaya! Ab Sign In karo.');
+
+      if (signupError) {
+        setError(signupError.message);
+        setSubmitting(false);
+        return;
+      }
+
+      // Step 2: profiles table mein save karo
+      if (data?.user) {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          full_name: name,
+          email: email,
+          phone: phone,
+          created_at: new Date().toISOString()
+        });
+      }
+
+      setError('✅ Account ban gaya! Ab Sign In karo.');
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) setError(error.message);
@@ -72,34 +91,70 @@ export default function AuthWrapper() {
   );
 
   if (!session) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-800/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
+
+        {/* Logo & Company Info */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-black tracking-wider text-blue-500">NEXORA</h1>
-          <p className="text-slate-400 text-sm mt-1">Courier & Logistics Portal</p>
+          <h1 className="text-4xl font-black tracking-wider text-blue-500">NEXORA</h1>
+          <p className="text-slate-300 font-semibold mt-1">Courier & Logistics</p>
+          <p className="text-slate-500 text-xs mt-2">Pakistan's Trusted International Shipping Partner</p>
+
+          {/* Contact Info Bar */}
+          <div className="flex justify-center gap-4 mt-4">
+            <a href="tel:+922131234567" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
+              📞 +92 321 000 0000
+            </a>
+            <a href="mailto:info@nexora.pk" className="flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-all">
+              ✉️ info@nexora.pk
+            </a>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">📍 Karachi, Pakistan</p>
         </div>
 
+        {/* Auth Card */}
         <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl">
           <h2 className="text-xl font-bold text-white mb-6">
-            {isSignup ? '🚀 Create Account' : '🔐 Welcome Back'}
+            {isSignup ? '🚀 Create Your Account' : '🔐 Welcome Back'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignup && (
-              <div>
-                <label className="text-xs text-slate-400 font-medium">Full Name</label>
-                <input
-                  type="text"
-                  className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-all"
-                  placeholder="Muhammad Ali"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
+              <>
+                <div>
+                  <label className="text-xs text-slate-400 font-medium">Full Name *</label>
+                  <input
+                    type="text"
+                    className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-all"
+                    placeholder="Muhammad Ali"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 font-medium">Phone Number *</label>
+                  <input
+                    type="tel"
+                    className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-all"
+                    placeholder="03XX-XXXXXXX"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+              </>
             )}
+
             <div>
-              <label className="text-xs text-slate-400 font-medium">Email Address</label>
+              <label className="text-xs text-slate-400 font-medium">Email Address *</label>
               <input
                 type="email"
                 className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-all"
@@ -110,7 +165,7 @@ export default function AuthWrapper() {
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 font-medium">Password</label>
+              <label className="text-xs text-slate-400 font-medium">Password *</label>
               <input
                 type="password"
                 className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-all"
@@ -142,7 +197,7 @@ export default function AuthWrapper() {
               {isSignup ? 'Already have an account?' : "Don't have an account?"}
               <button
                 type="button"
-                onClick={() => { setIsSignup(!isSignup); setError(''); }}
+                onClick={() => { setIsSignup(!isSignup); setError(''); setPhone(''); }}
                 className="text-blue-400 font-bold ml-2 hover:text-blue-300 transition-all"
               >
                 {isSignup ? 'Sign In' : 'Sign Up'}
@@ -150,6 +205,10 @@ export default function AuthWrapper() {
             </p>
           </div>
         </div>
+
+        <p className="text-center text-slate-600 text-xs mt-6">
+          © 2025 Nexora Courier & Logistics • Karachi, Pakistan
+        </p>
       </div>
     </div>
   );

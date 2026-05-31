@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [returnTab, setReturnTab] = useState('new_shipment');
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +15,7 @@ export default function App() {
   });
   const [ledgerData, setLedgerData] = useState([]);
   const [pendingData, setPendingData] = useState([]);
+  const [profilesData, setProfilesData] = useState([]);
   const [labelData, setLabelData] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -45,10 +46,32 @@ export default function App() {
     if (data) setPendingData(data);
   };
 
+  const fetchProfiles = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('id', { ascending: false });
+    if (data) setProfilesData(data);
+  };
+
   useEffect(() => {
     fetchLedger();
     fetchPending();
+    fetchProfiles();
   }, []);
+
+  // DASHBOARD METRICS
+  const getDashboardMetrics = () => {
+    const totalShipments = ledgerData.length;
+    const totalRevenue = ledgerData.reduce((sum, item) =>
+      sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0), 0);
+    const totalCost = ledgerData.reduce((sum, item) => sum + Number(item.buying_rate || 0), 0);
+    const totalNetProfit = totalRevenue - totalCost;
+    const totalWeight = ledgerData.reduce((sum, item) => sum + Number(item.weight || 0), 0);
+    const totalOutstanding = ledgerData.reduce((sum, item) =>
+      sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0) - Number(item.credit || 0), 0);
+    return { totalShipments, totalRevenue, totalNetProfit, totalWeight, totalOutstanding };
+  };
 
   const handleApprovePending = (item) => {
     setEditId(item.id);
@@ -88,13 +111,25 @@ export default function App() {
             name: nameKey,
             phone: item.sender_phone || 'N/A',
             email: item.sender_email || 'N/A',
-            address: item.sender_address || 'N/A',
             totalShipments: 0
           };
         }
         customersMap[nameKey].totalShipments += 1;
       }
     });
+
+    // Profiles se bhi customers add karo jo abhi tak shipment nahi ki
+    profilesData.forEach(profile => {
+      if (profile.full_name && !customersMap[profile.full_name.trim()]) {
+        customersMap[profile.full_name.trim()] = {
+          name: profile.full_name.trim(),
+          phone: profile.phone || 'N/A',
+          email: profile.email || 'N/A',
+          totalShipments: 0
+        };
+      }
+    });
+
     return Object.values(customersMap);
   };
 
@@ -189,7 +224,6 @@ export default function App() {
     }
     if (startDate) filtered = filtered.filter(item => item.created_at && new Date(item.created_at) >= new Date(startDate));
     if (endDate) filtered = filtered.filter(item => item.created_at && new Date(item.created_at) <= new Date(endDate + 'T23:59:59'));
-
     const chronological = [...filtered].reverse();
     let runningSum = 0;
     const withBalance = chronological.map((item) => {
@@ -220,6 +254,8 @@ export default function App() {
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
+  const metrics = getDashboardMetrics();
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-white font-sans">
 
@@ -231,6 +267,10 @@ export default function App() {
             <p className="text-xs text-slate-400 mt-1">Global Logistics Control</p>
           </div>
           <nav className="p-4 space-y-2">
+            <button type="button" onClick={() => { setActiveTab('dashboard'); setLabelData(null); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+              <span>📊</span> Dashboard
+            </button>
             <button type="button" onClick={() => { setActiveTab('pending'); setLabelData(null); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'pending' ? 'bg-orange-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
               <span>🔔</span> Pending Requests
@@ -250,6 +290,13 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'customers' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
               <span>👥</span> Customers / Ledgers
             </button>
+            <button type="button" onClick={() => { setActiveTab('registered'); setLabelData(null); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'registered' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+              <span>🆕</span> Registered Users
+              {profilesData.length > 0 && (
+                <span className="ml-auto bg-blue-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{profilesData.length}</span>
+              )}
+            </button>
           </nav>
         </div>
         <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">v3.0 • Premium ERP Suite</div>
@@ -258,6 +305,91 @@ export default function App() {
       {/* MAIN CONTENT */}
       <div className="flex-1 pl-64 p-8">
 
+        {/* DASHBOARD TAB */}
+        {activeTab === 'dashboard' && (
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-2xl font-black text-white mb-2">📊 Admin Dashboard</h2>
+            <p className="text-slate-400 mb-6">Nexora Courier & Logistics — Overview</p>
+
+            {/* MAIN METRICS */}
+            <div className="grid grid-cols-5 gap-4 mb-8">
+              <div className="bg-slate-900 border border-blue-500/20 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">Total Shipments</p>
+                <p className="text-3xl font-black text-blue-400 mt-2">{metrics.totalShipments}</p>
+                <p className="text-xs text-slate-500 mt-1">All time</p>
+              </div>
+              <div className="bg-slate-900 border border-yellow-500/20 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">Total Revenue</p>
+                <p className="text-2xl font-black text-yellow-400 mt-2">Rs {metrics.totalRevenue.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 mt-1">Gross billing</p>
+              </div>
+              <div className="bg-slate-900 border border-emerald-500/20 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">Net Profit</p>
+                <p className="text-2xl font-black text-emerald-400 mt-2">Rs {metrics.totalNetProfit.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 mt-1">After buying cost</p>
+              </div>
+              <div className="bg-slate-900 border border-purple-500/20 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">Total Weight</p>
+                <p className="text-2xl font-black text-purple-400 mt-2">{Number(metrics.totalWeight).toFixed(1)} KG</p>
+                <p className="text-xs text-slate-500 mt-1">All shipments</p>
+              </div>
+              <div className="bg-slate-900 border border-red-500/20 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">Outstanding</p>
+                <p className="text-2xl font-black text-red-400 mt-2">Rs {metrics.totalOutstanding.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 mt-1">Unpaid balance</p>
+              </div>
+            </div>
+
+            {/* SECOND ROW */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">Pending Requests</p>
+                <p className="text-3xl font-black text-orange-400 mt-2">{pendingData.length}</p>
+                <p className="text-xs text-slate-500 mt-1">Awaiting approval</p>
+              </div>
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">Registered Users</p>
+                <p className="text-3xl font-black text-blue-400 mt-2">{profilesData.length}</p>
+                <p className="text-xs text-slate-500 mt-1">Total signups</p>
+              </div>
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">Active Customers</p>
+                <p className="text-3xl font-black text-green-400 mt-2">{getUniqueCustomers().length}</p>
+                <p className="text-xs text-slate-500 mt-1">With shipments</p>
+              </div>
+            </div>
+
+            {/* RECENT ACTIVITY */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <h3 className="font-bold text-slate-300 mb-4">🕐 Recent Shipments</h3>
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="text-slate-400 border-b border-slate-700 text-xs uppercase">
+                    <th className="pb-3 px-2">AWB</th>
+                    <th className="pb-3 px-2">Sender</th>
+                    <th className="pb-3 px-2">Receiver</th>
+                    <th className="pb-3 px-2">Destination</th>
+                    <th className="pb-3 px-2">Service</th>
+                    <th className="pb-3 px-2 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ledgerData.slice(0, 8).map(s => (
+                    <tr key={s.id} className="border-b border-slate-800 hover:bg-slate-800/30">
+                      <td className="py-3 px-2 font-mono text-blue-400 text-xs">{s.nexora_airwaybill}</td>
+                      <td className="py-3 px-2 text-slate-300">{s.sender_name || 'N/A'}</td>
+                      <td className="py-3 px-2 text-white font-medium">{s.receiver}</td>
+                      <td className="py-3 px-2 text-slate-300">{s.destination}</td>
+                      <td className="py-3 px-2"><span className="bg-slate-800 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
+                      <td className="py-3 px-2 text-right font-mono text-yellow-400">Rs {Number(s.debit || 0).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* PENDING REQUESTS TAB */}
         {activeTab === 'pending' && (
           <div className="max-w-6xl mx-auto">
@@ -265,7 +397,6 @@ export default function App() {
               <h2 className="text-2xl font-black text-white">🔔 Pending Shipment Requests</h2>
               <span className="bg-orange-500 text-white text-sm font-black px-3 py-1 rounded-full">{pendingData.length} New</span>
             </div>
-
             {pendingData.length === 0 ? (
               <div className="bg-slate-900 border border-slate-700 rounded-xl p-16 text-center">
                 <p className="text-4xl mb-4">✅</p>
@@ -313,6 +444,48 @@ export default function App() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* REGISTERED USERS TAB */}
+        {activeTab === 'registered' && (
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-2xl font-black text-white mb-2">🆕 Registered Users</h2>
+            <p className="text-slate-400 mb-6">Website pe signup karne wale tamam users</p>
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-slate-400 border-b border-slate-700 text-xs uppercase">
+                    <th className="pb-3 px-2">Name</th>
+                    <th className="pb-3 px-2">Email</th>
+                    <th className="pb-3 px-2">Phone</th>
+                    <th className="pb-3 px-2">Joined</th>
+                    <th className="pb-3 px-2 text-center">WhatsApp</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {profilesData.length === 0 ? (
+                    <tr><td colSpan={5} className="text-center py-8 text-slate-400">Abhi tak koi signup nahi hua</td></tr>
+                  ) : profilesData.map((profile, idx) => (
+                    <tr key={idx} className="border-b border-slate-800 hover:bg-slate-800/30 transition-all">
+                      <td className="py-3.5 px-2 font-bold text-white">👤 {profile.full_name || 'N/A'}</td>
+                      <td className="py-3.5 px-2 text-slate-300">{profile.email || 'N/A'}</td>
+                      <td className="py-3.5 px-2 text-slate-300 font-mono">{profile.phone || 'N/A'}</td>
+                      <td className="py-3.5 px-2 text-slate-400 text-xs">{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</td>
+                      <td className="py-3.5 px-2 text-center">
+                        {profile.phone && profile.phone !== 'N/A' ? (
+                          <button type="button"
+                            onClick={() => window.open(`https://wa.me/92${profile.phone.replace(/^0/, '').replace(/\D/g, '')}`, '_blank')}
+                            className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 px-3 py-1 rounded-md text-xs font-bold transition-all">
+                            💬 WhatsApp
+                          </button>
+                        ) : <span className="text-slate-600 text-xs">No phone</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -398,12 +571,13 @@ export default function App() {
           <div className="max-w-7xl mx-auto">
             {!selectedCustomer ? (
               <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 shadow-xl">
-                <h2 className="text-xl font-bold mb-4 text-blue-400">Customer Directory (Senders)</h2>
+                <h2 className="text-xl font-bold mb-4 text-blue-400">Customer Directory</h2>
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="text-slate-400 border-b border-slate-700 text-sm">
                       <th className="pb-3 px-2">Customer Name</th>
                       <th className="pb-3 px-2">Phone</th>
+                      <th className="pb-3 px-2">Email</th>
                       <th className="pb-3 px-2">Total Parcels</th>
                       <th className="pb-3 px-2 text-center">Action</th>
                     </tr>
@@ -413,9 +587,10 @@ export default function App() {
                       <tr key={idx} className="border-b border-slate-800 hover:bg-slate-800/40 transition-all">
                         <td className="py-3.5 px-2 font-bold text-blue-400 cursor-pointer hover:underline" onClick={() => setSelectedCustomer(cust.name)}>👤 {cust.name}</td>
                         <td className="py-3.5 px-2 text-slate-300">{cust.phone}</td>
+                        <td className="py-3.5 px-2 text-slate-300">{cust.email}</td>
                         <td className="py-3.5 px-2 font-mono"><span className="bg-slate-800 px-2 py-0.5 rounded text-green-400 font-bold">{cust.totalShipments}</span></td>
                         <td className="py-3.5 px-2 text-center">
-                          <button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 hover:text-white transition-all">View Full Ledger</button>
+                          <button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 hover:text-white transition-all">View Ledger</button>
                         </td>
                       </tr>
                     ))}
@@ -437,7 +612,7 @@ export default function App() {
                         <p className="text-xl font-black text-green-400 mt-1">Rs {metrics.totalPaid.toLocaleString()}</p>
                       </div>
                       <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                        <p className="text-xs text-slate-400 font-medium">Net Profit (Nexora Only)</p>
+                        <p className="text-xs text-slate-400 font-medium">Net Profit</p>
                         <p className="text-xl font-black text-emerald-400 mt-1">Rs {metrics.totalProfit.toLocaleString()}</p>
                       </div>
                       <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
@@ -587,7 +762,7 @@ export default function App() {
                 <input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} />
               </div>
               <div>
-                <label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost (Cost Price)</label>
+                <label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost</label>
                 <input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} />
               </div>
               <div>
