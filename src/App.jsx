@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
-export default function App() {
+export default function App({ isAdmin = true, currentUserId = null }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [returnTab, setReturnTab] = useState('new_shipment');
@@ -28,6 +28,11 @@ export default function App() {
     buying_rate: 0, forwarding_awb: '', forward_vendor: ''
   });
 
+  // STAFF MANAGEMENT STATES
+  const [staffList, setStaffList] = useState([]);
+  const [staffEmail, setStaffEmail] = useState('');
+  const [staffMsg, setStaffMsg] = useState('');
+
   // TRACKING STATES
   const [trackingAwb, setTrackingAwb] = useState('');
   const [trackingUpdates, setTrackingUpdates] = useState([]);
@@ -38,131 +43,154 @@ export default function App() {
   const [trackingMsg, setTrackingMsg] = useState('');
 
   const fetchLedger = async () => {
-    const { data } = await supabase
-      .from('customer_ledgers')
-      .select('*')
-      .not('status', 'eq', 'pending')
-      .order('id', { ascending: false });
+    const { data } = await supabase.from('customer_ledgers').select('*').not('status', 'eq', 'pending').order('id', { ascending: false });
     if (data) setLedgerData(data);
   };
 
   const fetchPending = async () => {
-    const { data } = await supabase
-      .from('customer_ledgers')
-      .select('*')
-      .eq('status', 'pending')
-      .order('id', { ascending: false });
+    const { data } = await supabase.from('customer_ledgers').select('*').eq('status', 'pending').order('id', { ascending: false });
     if (data) setPendingData(data);
   };
 
   const fetchProfiles = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('id', { ascending: false });
+    const { data } = await supabase.from('profiles').select('*').order('id', { ascending: false });
     if (data) setProfilesData(data);
+  };
+
+  const fetchStaff = async () => {
+    const { data } = await supabase.from('user_roles').select('*').eq('role', 'staff');
+    if (data) setStaffList(data);
   };
 
   useEffect(() => {
     fetchLedger();
     fetchPending();
     fetchProfiles();
-  }, []);
+    if (isAdmin) fetchStaff();
+  }, [isAdmin]);
 
-  // ─── TRACKING STATUS OPTIONS ───────────────────────────────────────────────
-  const trackingStatuses = [
-    { value: 'Shipment Booked',         label: '📋 Shipment Booked',           color: 'bg-blue-900/40 text-blue-400 border-blue-500/30',     dot: 'bg-blue-500' },
-    { value: 'Picked Up',               label: '🛵 Picked Up',                  color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/30',     dot: 'bg-cyan-500' },
-    { value: 'Arrived at Origin Hub',   label: '🏭 Arrived at Origin Hub',      color: 'bg-indigo-900/40 text-indigo-400 border-indigo-500/30', dot: 'bg-indigo-500' },
-    { value: 'Departed Origin',         label: '✈️ Departed Origin',            color: 'bg-violet-900/40 text-violet-400 border-violet-500/30', dot: 'bg-violet-500' },
-    { value: 'In Transit',              label: '🚚 In Transit',                  color: 'bg-yellow-900/40 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-500' },
-    { value: 'Arrived at Transit Hub',  label: '🔄 Arrived at Transit Hub',     color: 'bg-orange-900/40 text-orange-400 border-orange-500/30', dot: 'bg-orange-400' },
-    { value: 'Departed Transit Hub',    label: '🛫 Departed Transit Hub',       color: 'bg-pink-900/40 text-pink-400 border-pink-500/30',     dot: 'bg-pink-500' },
-    { value: 'Arrived at Destination',  label: '🛬 Arrived at Destination',     color: 'bg-teal-900/40 text-teal-400 border-teal-500/30',     dot: 'bg-teal-500' },
-    { value: 'Customs Clearance',       label: '🛃 Customs Clearance',          color: 'bg-purple-900/40 text-purple-400 border-purple-500/30', dot: 'bg-purple-500' },
-    { value: 'Customs Released',        label: '✅ Customs Released',           color: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
-    { value: 'Out for Delivery',        label: '🏃 Out for Delivery',           color: 'bg-lime-900/40 text-lime-400 border-lime-500/30',     dot: 'bg-lime-500' },
-    { value: 'Delivery Attempted',      label: '🔔 Delivery Attempted',         color: 'bg-amber-900/40 text-amber-400 border-amber-500/30',  dot: 'bg-amber-500' },
-    { value: 'Delivered',               label: '📬 Delivered',                  color: 'bg-green-900/40 text-green-400 border-green-500/30',  dot: 'bg-green-500' },
-    { value: 'Delayed',                 label: '⚠️ Delayed',                    color: 'bg-red-900/40 text-red-400 border-red-500/30',        dot: 'bg-red-500' },
-    { value: 'On Hold',                 label: '⏸️ On Hold',                    color: 'bg-slate-700/60 text-slate-300 border-slate-500/30',  dot: 'bg-slate-400' },
-    { value: 'Exception',               label: '🚨 Exception / Issue',          color: 'bg-red-900/60 text-red-300 border-red-400/40',        dot: 'bg-red-600' },
-  ];
+  // STAFF FUNCTIONS
+  const handleAddStaff = async (e) => {
+    e.preventDefault();
+    setStaffMsg('');
 
-  const getStatusStyle = (statusValue) => {
-    return trackingStatuses.find(s => s.value === statusValue) || {
-      color: 'bg-slate-800 text-slate-400 border-slate-600',
-      dot: 'bg-slate-500'
-    };
+    // Pehle user dhundo email se
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', staffEmail)
+      .single();
+
+    if (!profileData) {
+      setStaffMsg('❌ Yeh email website pe registered nahi hai — pehle signup karna hoga!');
+      return;
+    }
+
+    // Auth user ID dhundo
+    const { data: authUsers } = await supabase.auth.admin?.listUsers?.() || { data: null };
+
+    // Direct user_roles mein check karo
+    const { data: existingRole } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', profileData.id)
+      .single();
+
+    if (existingRole) {
+      setStaffMsg('❌ Is user ka role already set hai: ' + existingRole.role);
+      return;
+    }
+
+    // Staff add karo — profileData.id use karo (ye uuid hoga agar sahi set hai)
+    // Pehle auth se user ID nikalni hogi
+    setStaffMsg('⚠️ Staff add karne ke liye pehle us user ka UUID chahiye. Supabase Authentication mein jaake us email ka UID copy karo aur mujhe batao!');
   };
 
-  // TRACKING FUNCTIONS
+  const handleAddStaffByUUID = async (uuid) => {
+    const { error } = await supabase.from('user_roles').insert([{
+      user_id: uuid,
+      role: 'staff',
+      added_by: currentUserId
+    }]);
+    if (!error) {
+      setStaffMsg('✅ Staff member add ho gaya!');
+      setStaffEmail('');
+      fetchStaff();
+    } else {
+      setStaffMsg('❌ Error: ' + error.message);
+    }
+  };
+
+  const handleRemoveStaff = async (userId) => {
+    if (window.confirm('Is staff member ko remove karna chahte ho?')) {
+      await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'staff');
+      fetchStaff();
+      setStaffMsg('✅ Staff member remove ho gaya!');
+    }
+  };
+
+  // TRACKING STATUS OPTIONS
+  const trackingStatuses = [
+    { value: 'Shipment Booked', label: '📋 Shipment Booked', color: 'bg-blue-900/40 text-blue-400 border-blue-500/30', dot: 'bg-blue-500' },
+    { value: 'Picked Up', label: '🛵 Picked Up', color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/30', dot: 'bg-cyan-500' },
+    { value: 'Arrived at Origin Hub', label: '🏭 Arrived at Origin Hub', color: 'bg-indigo-900/40 text-indigo-400 border-indigo-500/30', dot: 'bg-indigo-500' },
+    { value: 'Departed Origin', label: '✈️ Departed Origin', color: 'bg-violet-900/40 text-violet-400 border-violet-500/30', dot: 'bg-violet-500' },
+    { value: 'In Transit', label: '🚚 In Transit', color: 'bg-yellow-900/40 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-500' },
+    { value: 'Arrived at Transit Hub', label: '🔄 Arrived at Transit Hub', color: 'bg-orange-900/40 text-orange-400 border-orange-500/30', dot: 'bg-orange-400' },
+    { value: 'Departed Transit Hub', label: '🛫 Departed Transit Hub', color: 'bg-pink-900/40 text-pink-400 border-pink-500/30', dot: 'bg-pink-500' },
+    { value: 'Arrived at Destination', label: '🛬 Arrived at Destination', color: 'bg-teal-900/40 text-teal-400 border-teal-500/30', dot: 'bg-teal-500' },
+    { value: 'Customs Clearance', label: '🛃 Customs Clearance', color: 'bg-purple-900/40 text-purple-400 border-purple-500/30', dot: 'bg-purple-500' },
+    { value: 'Customs Released', label: '✅ Customs Released', color: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
+    { value: 'Out for Delivery', label: '🏃 Out for Delivery', color: 'bg-lime-900/40 text-lime-400 border-lime-500/30', dot: 'bg-lime-500' },
+    { value: 'Delivery Attempted', label: '🔔 Delivery Attempted', color: 'bg-amber-900/40 text-amber-400 border-amber-500/30', dot: 'bg-amber-500' },
+    { value: 'Delivered', label: '📬 Delivered', color: 'bg-green-900/40 text-green-400 border-green-500/30', dot: 'bg-green-500' },
+    { value: 'Delayed', label: '⚠️ Delayed', color: 'bg-red-900/40 text-red-400 border-red-500/30', dot: 'bg-red-500' },
+    { value: 'On Hold', label: '⏸️ On Hold', color: 'bg-slate-700/60 text-slate-300 border-slate-500/30', dot: 'bg-slate-400' },
+    { value: 'Exception', label: '🚨 Exception / Issue', color: 'bg-red-900/60 text-red-300 border-red-400/40', dot: 'bg-red-600' },
+  ];
+
+  const getStatusStyle = (statusValue) => trackingStatuses.find(s => s.value === statusValue) || { color: 'bg-slate-800 text-slate-400 border-slate-600', dot: 'bg-slate-500' };
+
   const handleSearchTracking = async (e) => {
     e.preventDefault();
     const shipment = ledgerData.find(s => s.nexora_airwaybill?.toLowerCase() === trackingAwb.toLowerCase());
-    if (!shipment) {
-      setTrackingMsg('❌ Koi shipment nahi mila is AWB se');
-      setSelectedAwbShipment(null);
-      setTrackingUpdates([]);
-      return;
-    }
+    if (!shipment) { setTrackingMsg('❌ Koi shipment nahi mila is AWB se'); setSelectedAwbShipment(null); setTrackingUpdates([]); return; }
     setSelectedAwbShipment(shipment);
     setTrackingMsg('');
-    const { data } = await supabase
-      .from('tracking_updates')
-      .select('*')
-      .eq('awb', shipment.nexora_airwaybill)
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('tracking_updates').select('*').eq('awb', shipment.nexora_airwaybill).order('created_at', { ascending: false });
     if (data) setTrackingUpdates(data);
   };
 
   const handleAddTrackingUpdate = async (e) => {
     e.preventDefault();
     if (!selectedAwbShipment) return;
-    const insertTime = newUpdate.custom_time
-      ? new Date(newUpdate.custom_time).toISOString()
-      : new Date().toISOString();
+    const insertTime = newUpdate.custom_time ? new Date(newUpdate.custom_time).toISOString() : new Date().toISOString();
     const { error } = await supabase.from('tracking_updates').insert([{
       awb: selectedAwbShipment.nexora_airwaybill,
-      location: newUpdate.location,
-      status: newUpdate.status,
-      description: newUpdate.description,
-      created_at: insertTime
+      location: newUpdate.location, status: newUpdate.status,
+      description: newUpdate.description, created_at: insertTime
     }]);
     if (!error) {
       setTrackingMsg('✅ Tracking update add ho gaya!');
       setNewUpdate({ location: '', status: 'Picked Up', description: '', custom_time: '' });
-      const { data } = await supabase
-        .from('tracking_updates')
-        .select('*')
-        .eq('awb', selectedAwbShipment.nexora_airwaybill)
-        .order('created_at', { ascending: false });
+      const { data } = await supabase.from('tracking_updates').select('*').eq('awb', selectedAwbShipment.nexora_airwaybill).order('created_at', { ascending: false });
       if (data) setTrackingUpdates(data);
-    } else {
-      setTrackingMsg('❌ Error: ' + error.message);
-    }
+    } else { setTrackingMsg('❌ Error: ' + error.message); }
   };
 
   const handleDeleteTrackingUpdate = async (id) => {
     await supabase.from('tracking_updates').delete().eq('id', id);
-    const { data } = await supabase
-      .from('tracking_updates')
-      .select('*')
-      .eq('awb', selectedAwbShipment.nexora_airwaybill)
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('tracking_updates').select('*').eq('awb', selectedAwbShipment.nexora_airwaybill).order('created_at', { ascending: false });
     if (data) setTrackingUpdates(data);
   };
 
-  // DASHBOARD METRICS
   const getDashboardMetrics = () => {
     const totalShipments = ledgerData.length;
-    const totalRevenue = ledgerData.reduce((sum, item) =>
-      sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0), 0);
+    const totalRevenue = ledgerData.reduce((sum, item) => sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0), 0);
     const totalCost = ledgerData.reduce((sum, item) => sum + Number(item.buying_rate || 0), 0);
     const totalNetProfit = totalRevenue - totalCost;
     const totalWeight = ledgerData.reduce((sum, item) => sum + Number(item.weight || 0), 0);
-    const totalOutstanding = ledgerData.reduce((sum, item) =>
-      sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0) - Number(item.credit || 0), 0);
+    const totalOutstanding = ledgerData.reduce((sum, item) => sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0) - Number(item.credit || 0), 0);
     return { totalShipments, totalRevenue, totalNetProfit, totalWeight, totalOutstanding };
   };
 
@@ -174,8 +202,7 @@ export default function App() {
       receiver_name: item.receiver || '', receiver_address: item.receiver_address || '',
       receiver_phone: item.receiver_phone || '', receiver_email: item.receiver_email || '',
       destination: item.destination || '', weight: item.weight || '', service: item.service || '',
-      remote_status: 'Non-Remote',
-      debit: 0, credit: 0, petrol: 0, remote_charges: 0,
+      remote_status: 'Non-Remote', debit: 0, credit: 0, petrol: 0, remote_charges: 0,
       buying_rate: 0, forwarding_awb: '', forward_vendor: ''
     });
     setIsModalOpen(true);
@@ -193,27 +220,14 @@ export default function App() {
     profilesData.forEach(profile => {
       if (profile.full_name) {
         const nameKey = profile.full_name.trim();
-        customersMap[nameKey] = {
-          name: nameKey,
-          phone: profile.phone || 'N/A',
-          email: profile.email || 'N/A',
-          totalShipments: 0,
-          profileId: profile.id,
-          hasProfile: true
-        };
+        customersMap[nameKey] = { name: nameKey, phone: profile.phone || 'N/A', email: profile.email || 'N/A', totalShipments: 0, profileId: profile.id, hasProfile: true };
       }
     });
     ledgerData.forEach(item => {
       if (item.sender_name) {
         const nameKey = item.sender_name.trim();
         if (!customersMap[nameKey]) {
-          customersMap[nameKey] = {
-            name: nameKey,
-            phone: item.sender_phone || 'N/A',
-            email: item.sender_email || 'N/A',
-            totalShipments: 0,
-            hasProfile: false
-          };
+          customersMap[nameKey] = { name: nameKey, phone: item.sender_phone || 'N/A', email: item.sender_email || 'N/A', totalShipments: 0, hasProfile: false };
         }
         customersMap[nameKey].totalShipments += 1;
       }
@@ -230,21 +244,20 @@ export default function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const nexoraTracking = "NX-" + Math.floor(100000000 + Math.random() * 900000000);
-    const dbPayload = {
+    const { error } = await supabase.from('customer_ledgers').insert([{
       nexora_airwaybill: nexoraTracking, receiver: formData.receiver_name, destination: formData.destination,
       weight: formData.weight, service: formData.service, sender_name: formData.sender_name,
       sender_address: formData.sender_address, sender_phone: formData.sender_phone, sender_email: formData.sender_email,
       receiver_address: formData.receiver_address, receiver_phone: formData.receiver_phone, receiver_email: formData.receiver_email,
       remote_status: 'Non-Remote', debit: 0, credit: 0, petrol: 0, remote_charges: 0,
       buying_rate: 0, forwarding_awb: '', forward_vendor: '', status: 'approved'
-    };
-    const { error } = await supabase.from('customer_ledgers').insert([dbPayload]);
+    }]);
     if (!error) {
       setReturnTab('new_shipment');
       setLabelData({ ...formData, nexoraTracking });
       fetchLedger();
       setFormData({ sender_name: '', sender_address: '', sender_phone: '', sender_email: '', receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '', destination: '', weight: '', service: '' });
-    } else { alert("Error saving data: " + error.message); }
+    } else { alert("Error: " + error.message); }
   };
 
   const handleEditClick = (item) => {
@@ -265,34 +278,26 @@ export default function App() {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.from('customer_ledgers')
-      .update({
-        sender_name: editFormData.sender_name, sender_address: editFormData.sender_address,
-        sender_phone: editFormData.sender_phone, sender_email: editFormData.sender_email,
-        receiver: editFormData.receiver_name, receiver_address: editFormData.receiver_address,
-        receiver_phone: editFormData.receiver_phone, receiver_email: editFormData.receiver_email,
-        destination: editFormData.destination, weight: editFormData.weight, service: editFormData.service,
-        remote_status: editFormData.remote_status,
-        debit: Number(editFormData.debit), credit: Number(editFormData.credit),
-        petrol: Number(editFormData.petrol), remote_charges: Number(editFormData.remote_charges),
-        buying_rate: Number(editFormData.buying_rate),
-        forwarding_awb: editFormData.forwarding_awb, forward_vendor: editFormData.forward_vendor,
-        status: 'approved'
-      })
-      .eq('id', editId);
+    const { error } = await supabase.from('customer_ledgers').update({
+      sender_name: editFormData.sender_name, sender_address: editFormData.sender_address,
+      sender_phone: editFormData.sender_phone, sender_email: editFormData.sender_email,
+      receiver: editFormData.receiver_name, receiver_address: editFormData.receiver_address,
+      receiver_phone: editFormData.receiver_phone, receiver_email: editFormData.receiver_email,
+      destination: editFormData.destination, weight: editFormData.weight, service: editFormData.service,
+      remote_status: editFormData.remote_status,
+      debit: Number(editFormData.debit), credit: Number(editFormData.credit),
+      petrol: Number(editFormData.petrol), remote_charges: Number(editFormData.remote_charges),
+      buying_rate: Number(editFormData.buying_rate),
+      forwarding_awb: editFormData.forwarding_awb, forward_vendor: editFormData.forward_vendor,
+      status: 'approved'
+    }).eq('id', editId);
     if (!error) { setIsModalOpen(false); fetchLedger(); fetchPending(); }
     else { alert("Update failed: " + error.message); }
   };
 
   const getCalculatedLedger = (customerName) => {
     let filtered = ledgerData.filter(item => item.sender_name && item.sender_name.trim() === customerName);
-    if (searchTerm) {
-      filtered = filtered.filter(item =>
-        (item.nexora_airwaybill && item.nexora_airwaybill.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.receiver && item.receiver.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.forwarding_awb && item.forwarding_awb.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
+    if (searchTerm) filtered = filtered.filter(item => (item.nexora_airwaybill && item.nexora_airwaybill.toLowerCase().includes(searchTerm.toLowerCase())) || (item.receiver && item.receiver.toLowerCase().includes(searchTerm.toLowerCase())) || (item.forwarding_awb && item.forwarding_awb.toLowerCase().includes(searchTerm.toLowerCase())));
     if (startDate) filtered = filtered.filter(item => item.created_at && new Date(item.created_at) >= new Date(startDate));
     if (endDate) filtered = filtered.filter(item => item.created_at && new Date(item.created_at) <= new Date(endDate + 'T23:59:59'));
     const chronological = [...filtered].reverse();
@@ -332,7 +337,7 @@ export default function App() {
         <div>
           <div className="p-6 border-b border-slate-800">
             <h1 className="text-xl font-black tracking-wider text-blue-500">NEXORA ERP</h1>
-            <p className="text-xs text-slate-400 mt-1">Global Logistics Control</p>
+            <p className="text-xs text-slate-400 mt-1">{isAdmin ? 'Admin Control' : 'Staff Portal'}</p>
           </div>
           <nav className="p-4 space-y-2">
             <button type="button" onClick={() => { setActiveTab('dashboard'); setLabelData(null); }}
@@ -365,9 +370,19 @@ export default function App() {
               <span>🆕</span> Registered Users
               {profilesData.length > 0 && <span className="ml-auto bg-blue-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{profilesData.length}</span>}
             </button>
+            {/* SIRF ADMIN KO STAFF MANAGEMENT DIKHEGA */}
+            {isAdmin && (
+              <button type="button" onClick={() => { setActiveTab('staff'); setLabelData(null); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'staff' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                <span>🔧</span> Staff Management
+                {staffList.length > 0 && <span className="ml-auto bg-emerald-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{staffList.length}</span>}
+              </button>
+            )}
           </nav>
         </div>
-        <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">v3.0 • Premium ERP Suite</div>
+        <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+          {isAdmin ? '👑 Admin Mode' : '🔧 Staff Mode'} • v3.0
+        </div>
       </div>
 
       {/* MAIN CONTENT */}
@@ -376,60 +391,24 @@ export default function App() {
         {/* DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl font-black text-white mb-2">📊 Admin Dashboard</h2>
+            <h2 className="text-2xl font-black text-white mb-2">📊 {isAdmin ? 'Admin' : 'Staff'} Dashboard</h2>
             <p className="text-slate-400 mb-6">Nexora Courier & Logistics — Overview</p>
             <div className="grid grid-cols-5 gap-4 mb-8">
-              <div className="bg-slate-900 border border-blue-500/20 p-5 rounded-xl">
-                <p className="text-xs text-slate-400 font-medium">Total Shipments</p>
-                <p className="text-3xl font-black text-blue-400 mt-2">{metrics.totalShipments}</p>
-                <p className="text-xs text-slate-500 mt-1">All time</p>
-              </div>
-              <div className="bg-slate-900 border border-yellow-500/20 p-5 rounded-xl">
-                <p className="text-xs text-slate-400 font-medium">Total Revenue</p>
-                <p className="text-2xl font-black text-yellow-400 mt-2">Rs {metrics.totalRevenue.toLocaleString()}</p>
-                <p className="text-xs text-slate-500 mt-1">Gross billing</p>
-              </div>
-              <div className="bg-slate-900 border border-emerald-500/20 p-5 rounded-xl">
-                <p className="text-xs text-slate-400 font-medium">Net Profit</p>
-                <p className="text-2xl font-black text-emerald-400 mt-2">Rs {metrics.totalNetProfit.toLocaleString()}</p>
-                <p className="text-xs text-slate-500 mt-1">After buying cost</p>
-              </div>
-              <div className="bg-slate-900 border border-purple-500/20 p-5 rounded-xl">
-                <p className="text-xs text-slate-400 font-medium">Total Weight</p>
-                <p className="text-2xl font-black text-purple-400 mt-2">{Number(metrics.totalWeight).toFixed(1)} KG</p>
-                <p className="text-xs text-slate-500 mt-1">All shipments</p>
-              </div>
-              <div className="bg-slate-900 border border-red-500/20 p-5 rounded-xl">
-                <p className="text-xs text-slate-400 font-medium">Outstanding</p>
-                <p className="text-2xl font-black text-red-400 mt-2">Rs {metrics.totalOutstanding.toLocaleString()}</p>
-                <p className="text-xs text-slate-500 mt-1">Unpaid balance</p>
-              </div>
+              <div className="bg-slate-900 border border-blue-500/20 p-5 rounded-xl"><p className="text-xs text-slate-400 font-medium">Total Shipments</p><p className="text-3xl font-black text-blue-400 mt-2">{metrics.totalShipments}</p><p className="text-xs text-slate-500 mt-1">All time</p></div>
+              <div className="bg-slate-900 border border-yellow-500/20 p-5 rounded-xl"><p className="text-xs text-slate-400 font-medium">Total Revenue</p><p className="text-2xl font-black text-yellow-400 mt-2">Rs {metrics.totalRevenue.toLocaleString()}</p><p className="text-xs text-slate-500 mt-1">Gross billing</p></div>
+              <div className="bg-slate-900 border border-emerald-500/20 p-5 rounded-xl"><p className="text-xs text-slate-400 font-medium">Net Profit</p><p className="text-2xl font-black text-emerald-400 mt-2">Rs {metrics.totalNetProfit.toLocaleString()}</p><p className="text-xs text-slate-500 mt-1">After buying cost</p></div>
+              <div className="bg-slate-900 border border-purple-500/20 p-5 rounded-xl"><p className="text-xs text-slate-400 font-medium">Total Weight</p><p className="text-2xl font-black text-purple-400 mt-2">{Number(metrics.totalWeight).toFixed(1)} KG</p><p className="text-xs text-slate-500 mt-1">All shipments</p></div>
+              <div className="bg-slate-900 border border-red-500/20 p-5 rounded-xl"><p className="text-xs text-slate-400 font-medium">Outstanding</p><p className="text-2xl font-black text-red-400 mt-2">Rs {metrics.totalOutstanding.toLocaleString()}</p><p className="text-xs text-slate-500 mt-1">Unpaid balance</p></div>
             </div>
             <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-                <p className="text-xs text-slate-400 font-medium">Pending Requests</p>
-                <p className="text-3xl font-black text-orange-400 mt-2">{pendingData.length}</p>
-                <p className="text-xs text-slate-500 mt-1">Awaiting approval</p>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-                <p className="text-xs text-slate-400 font-medium">Registered Users</p>
-                <p className="text-3xl font-black text-blue-400 mt-2">{profilesData.length}</p>
-                <p className="text-xs text-slate-500 mt-1">Total signups</p>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-                <p className="text-xs text-slate-400 font-medium">Active Customers</p>
-                <p className="text-3xl font-black text-green-400 mt-2">{getUniqueCustomers().length}</p>
-                <p className="text-xs text-slate-500 mt-1">With shipments</p>
-              </div>
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl"><p className="text-xs text-slate-400 font-medium">Pending Requests</p><p className="text-3xl font-black text-orange-400 mt-2">{pendingData.length}</p><p className="text-xs text-slate-500 mt-1">Awaiting approval</p></div>
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl"><p className="text-xs text-slate-400 font-medium">Registered Users</p><p className="text-3xl font-black text-blue-400 mt-2">{profilesData.length}</p><p className="text-xs text-slate-500 mt-1">Total signups</p></div>
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl"><p className="text-xs text-slate-400 font-medium">Active Customers</p><p className="text-3xl font-black text-green-400 mt-2">{getUniqueCustomers().length}</p><p className="text-xs text-slate-500 mt-1">With shipments</p></div>
             </div>
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
               <h3 className="font-bold text-slate-300 mb-4">🕐 Recent Shipments</h3>
               <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="text-slate-400 border-b border-slate-700 text-xs uppercase">
-                    <th className="pb-3 px-2">AWB</th><th className="pb-3 px-2">Sender</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2 text-right">Amount</th>
-                  </tr>
-                </thead>
+                <thead><tr className="text-slate-400 border-b border-slate-700 text-xs uppercase"><th className="pb-3 px-2">AWB</th><th className="pb-3 px-2">Sender</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2 text-right">Amount</th></tr></thead>
                 <tbody>
                   {ledgerData.slice(0, 8).map(s => (
                     <tr key={s.id} className="border-b border-slate-800 hover:bg-slate-800/30">
@@ -447,35 +426,92 @@ export default function App() {
           </div>
         )}
 
-        {/* ─── TRACKING CONTROL TAB ──────────────────────────────────────────── */}
+        {/* STAFF MANAGEMENT — SIRF ADMIN DEKH SAKTA HAI */}
+        {activeTab === 'staff' && isAdmin && (
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-black text-white mb-2">🔧 Staff Management</h2>
+            <p className="text-slate-400 mb-6">Apne staff members ko manage karo — sirf tum yeh dekh sakte ho</p>
+
+            {/* ADD STAFF */}
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
+              <h3 className="font-bold text-emerald-400 mb-4">Staff Member Add Karo</h3>
+              <p className="text-slate-400 text-xs mb-4">Staff member ko pehle website pe signup karna hoga — phir unka Supabase UUID yahan daalo!</p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-slate-400">Staff Member ka Supabase UUID</label>
+                  <input
+                    className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
+                    placeholder="e.g. 0cb78d45-25e3-4507-8883-0ee7428c1f3a"
+                    value={staffEmail}
+                    onChange={(e) => setStaffEmail(e.target.value)}
+                  />
+                </div>
+                <p className="text-xs text-slate-500">
+                  UUID kahan milega: Supabase Dashboard → Authentication → Users → us user pe click karo → UID copy karo
+                </p>
+
+                {staffMsg && (
+                  <div className={`text-xs p-3 rounded-lg ${staffMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : staffMsg.startsWith('⚠️') ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
+                    {staffMsg}
+                  </div>
+                )}
+
+                <button type="button"
+                  onClick={() => {
+                    if (!staffEmail.trim()) { setStaffMsg('❌ UUID daalo pehle!'); return; }
+                    if (window.confirm('Is UUID wale user ko staff banana chahte ho?')) {
+                      handleAddStaffByUUID(staffEmail.trim());
+                    }
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition-all">
+                  ➕ Add as Staff Member
+                </button>
+              </div>
+            </div>
+
+            {/* CURRENT STAFF LIST */}
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+              <h3 className="font-bold text-slate-300 mb-4">Current Staff Members ({staffList.length})</h3>
+              {staffList.length === 0 ? (
+                <p className="text-slate-400 text-sm text-center py-6">Abhi koi staff member nahi hai</p>
+              ) : (
+                <div className="space-y-3">
+                  {staffList.map((staff, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                      <div>
+                        <p className="text-xs text-slate-400 mb-1">User ID</p>
+                        <p className="font-mono text-sm text-blue-400">{staff.user_id}</p>
+                        <p className="text-xs text-emerald-400 mt-1 font-bold">🔧 Staff</p>
+                      </div>
+                      <button type="button"
+                        onClick={() => handleRemoveStaff(staff.user_id)}
+                        className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 font-bold px-4 py-2 rounded-lg text-sm transition-all">
+                        🗑️ Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TRACKING CONTROL */}
         {activeTab === 'tracking_control' && (
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">🗺️ Tracking Control Panel</h2>
             <p className="text-slate-400 mb-6">Kisi bhi shipment ki location aur status manually update karo</p>
-
-            {/* SEARCH AWB */}
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
               <h3 className="font-bold text-slate-300 mb-4">Step 1: AWB Search Karo</h3>
               <form onSubmit={handleSearchTracking} className="flex gap-3">
-                <input
-                  className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                  placeholder="Nexora AWB daalo e.g. NX-123456789"
-                  value={trackingAwb}
-                  onChange={(e) => setTrackingAwb(e.target.value)}
-                  required
-                />
-                <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 rounded-lg transition-all">
-                  🔍 Search
-                </button>
+                <input className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="Nexora AWB daalo e.g. NX-123456789" value={trackingAwb} onChange={(e) => setTrackingAwb(e.target.value)} required />
+                <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 rounded-lg transition-all">🔍 Search</button>
               </form>
-              {trackingMsg && !trackingMsg.startsWith('✅') && (
-                <p className="text-red-400 text-sm mt-3">{trackingMsg}</p>
-              )}
+              {trackingMsg && !trackingMsg.startsWith('✅') && <p className="text-red-400 text-sm mt-3">{trackingMsg}</p>}
             </div>
-
             {selectedAwbShipment && (
               <>
-                {/* SHIPMENT INFO */}
                 <div className="bg-slate-900 border border-purple-500/30 rounded-xl p-6 mb-6">
                   <div className="grid grid-cols-4 gap-4 text-sm">
                     <div><p className="text-xs text-slate-400">AWB</p><p className="font-mono font-bold text-purple-400">{selectedAwbShipment.nexora_airwaybill}</p></div>
@@ -484,131 +520,53 @@ export default function App() {
                     <div><p className="text-xs text-slate-400">Destination</p><p className="font-bold text-blue-400">{selectedAwbShipment.destination}</p></div>
                   </div>
                 </div>
-
-                {/* ADD NEW UPDATE */}
                 <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
                   <h3 className="font-bold text-slate-300 mb-4">Step 2: Naya Tracking Update Add Karo</h3>
                   <form onSubmit={handleAddTrackingUpdate} className="grid grid-cols-2 gap-4">
-
-                    {/* Status Dropdown */}
                     <div>
                       <label className="text-xs text-slate-400 mb-1 block">Status *</label>
-                      <select
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                        value={newUpdate.status}
-                        onChange={(e) => setNewUpdate({...newUpdate, status: e.target.value})}
-                      >
-                        {trackingStatuses.map(s => (
-                          <option key={s.value} value={s.value}>{s.label}</option>
-                        ))}
+                      <select className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500" value={newUpdate.status} onChange={(e) => setNewUpdate({...newUpdate, status: e.target.value})}>
+                        {trackingStatuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                       </select>
                     </div>
-
-                    {/* Location */}
                     <div>
                       <label className="text-xs text-slate-400 mb-1 block">Location *</label>
-                      <input
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                        placeholder="e.g. Paris, France"
-                        value={newUpdate.location}
-                        onChange={(e) => setNewUpdate({...newUpdate, location: e.target.value})}
-                        required
-                      />
+                      <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="e.g. Paris, France" value={newUpdate.location} onChange={(e) => setNewUpdate({...newUpdate, location: e.target.value})} required />
                     </div>
-
-                    {/* Description */}
                     <div>
                       <label className="text-xs text-slate-400 mb-1 block">Description / Note</label>
-                      <input
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                        placeholder="e.g. Package has arrived at Charles de Gaulle Airport"
-                        value={newUpdate.description}
-                        onChange={(e) => setNewUpdate({...newUpdate, description: e.target.value})}
-                      />
+                      <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="e.g. Package departed from airport" value={newUpdate.description} onChange={(e) => setNewUpdate({...newUpdate, description: e.target.value})} />
                     </div>
-
-                    {/* Custom Date/Time */}
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Date & Time (optional — default: now)</label>
-                      <input
-                        type="datetime-local"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                        value={newUpdate.custom_time}
-                        onChange={(e) => setNewUpdate({...newUpdate, custom_time: e.target.value})}
-                      />
+                      <label className="text-xs text-slate-400 mb-1 block">Date & Time (optional)</label>
+                      <input type="datetime-local" className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500" value={newUpdate.custom_time} onChange={(e) => setNewUpdate({...newUpdate, custom_time: e.target.value})} />
                     </div>
-
-                    {trackingMsg && (
-                      <div className={`col-span-2 text-xs p-3 rounded-lg ${trackingMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
-                        {trackingMsg}
-                      </div>
-                    )}
-                    <div className="col-span-2">
-                      <button type="submit" className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-all">
-                        ➕ Add Tracking Update
-                      </button>
-                    </div>
+                    {trackingMsg && <div className={`col-span-2 text-xs p-3 rounded-lg ${trackingMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>{trackingMsg}</div>}
+                    <div className="col-span-2"><button type="submit" className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-all">➕ Add Tracking Update</button></div>
                   </form>
                 </div>
-
-                {/* TIMELINE */}
                 <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
-                  <h3 className="font-bold text-slate-300 mb-5">
-                    📍 Live Tracking Timeline
-                    <span className="ml-2 text-xs bg-purple-900/50 text-purple-400 border border-purple-700 px-2 py-0.5 rounded-full font-normal">
-                      {trackingUpdates.length} updates
-                    </span>
-                  </h3>
-
-                  {trackingUpdates.length === 0 ? (
-                    <p className="text-slate-400 text-sm text-center py-8">Abhi koi tracking update nahi hai</p>
-                  ) : (
+                  <h3 className="font-bold text-slate-300 mb-5">📍 Live Tracking Timeline <span className="ml-2 text-xs bg-purple-900/50 text-purple-400 border border-purple-700 px-2 py-0.5 rounded-full font-normal">{trackingUpdates.length} updates</span></h3>
+                  {trackingUpdates.length === 0 ? <p className="text-slate-400 text-sm text-center py-8">Abhi koi tracking update nahi hai</p> : (
                     <div className="relative">
-                      {/* vertical line */}
                       <div className="absolute left-[18px] top-2 bottom-2 w-0.5 bg-slate-700 rounded-full"></div>
-
                       <div className="space-y-1">
                         {trackingUpdates.map((update, idx) => {
                           const style = getStatusStyle(update.status);
                           const isLatest = idx === 0;
                           return (
                             <div key={update.id} className={`flex gap-4 relative pl-10 pb-5 ${isLatest ? '' : 'opacity-75'}`}>
-                              {/* dot */}
                               <div className={`absolute left-[11px] top-1.5 w-4 h-4 rounded-full border-2 border-slate-900 ${style.dot} ${isLatest ? 'ring-2 ring-offset-1 ring-offset-slate-900 ring-purple-400' : ''}`}></div>
-
                               <div className={`flex-1 rounded-xl p-4 border ${isLatest ? 'bg-slate-800/60 border-slate-600' : 'bg-slate-800/20 border-slate-700/50'}`}>
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1">
-                                    {/* Status badge */}
-                                    <span className={`inline-block text-xs px-2 py-0.5 rounded border font-bold mb-2 ${style.color}`}>
-                                      {update.status}
-                                    </span>
-                                    {isLatest && (
-                                      <span className="ml-2 text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">LATEST</span>
-                                    )}
-                                    {/* Location */}
+                                    <span className={`inline-block text-xs px-2 py-0.5 rounded border font-bold mb-2 ${style.color}`}>{update.status}</span>
+                                    {isLatest && <span className="ml-2 text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">LATEST</span>}
                                     <p className="font-bold text-white text-sm">📍 {update.location}</p>
-                                    {/* Description */}
-                                    {update.description && (
-                                      <p className="text-slate-400 text-xs mt-1">{update.description}</p>
-                                    )}
-                                    {/* Time */}
-                                    <p className="text-slate-500 text-xs mt-1.5">
-                                      🕐 {new Date(update.created_at).toLocaleString('en-PK', {
-                                        day: '2-digit', month: 'short', year: 'numeric',
-                                        hour: '2-digit', minute: '2-digit'
-                                      })}
-                                    </p>
+                                    {update.description && <p className="text-slate-400 text-xs mt-1">{update.description}</p>}
+                                    <p className="text-slate-500 text-xs mt-1.5">🕐 {new Date(update.created_at).toLocaleString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                   </div>
-                                  {/* Delete */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteTrackingUpdate(update.id)}
-                                    className="text-red-500/50 hover:text-red-400 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all flex-shrink-0"
-                                    title="Delete this update"
-                                  >
-                                    🗑️
-                                  </button>
+                                  <button type="button" onClick={() => handleDeleteTrackingUpdate(update.id)} className="text-red-500/50 hover:text-red-400 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all flex-shrink-0">🗑️</button>
                                 </div>
                               </div>
                             </div>
@@ -631,10 +589,7 @@ export default function App() {
               <span className="bg-orange-500 text-white text-sm font-black px-3 py-1 rounded-full">{pendingData.length} New</span>
             </div>
             {pendingData.length === 0 ? (
-              <div className="bg-slate-900 border border-slate-700 rounded-xl p-16 text-center">
-                <p className="text-4xl mb-4">✅</p>
-                <p className="text-slate-400 font-medium">Koi pending request nahi hai</p>
-              </div>
+              <div className="bg-slate-900 border border-slate-700 rounded-xl p-16 text-center"><p className="text-4xl mb-4">✅</p><p className="text-slate-400 font-medium">Koi pending request nahi hai</p></div>
             ) : (
               <div className="space-y-4">
                 {pendingData.map((item) => (
@@ -665,11 +620,7 @@ export default function App() {
             <p className="text-slate-400 mb-6">Website pe signup karne wale tamam users</p>
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-slate-400 border-b border-slate-700 text-xs uppercase">
-                    <th className="pb-3 px-2">Name</th><th className="pb-3 px-2">Email</th><th className="pb-3 px-2">Phone</th><th className="pb-3 px-2">Joined</th><th className="pb-3 px-2 text-center">WhatsApp</th>
-                  </tr>
-                </thead>
+                <thead><tr className="text-slate-400 border-b border-slate-700 text-xs uppercase"><th className="pb-3 px-2">Name</th><th className="pb-3 px-2">Email</th><th className="pb-3 px-2">Phone</th><th className="pb-3 px-2">Joined</th><th className="pb-3 px-2 text-center">WhatsApp</th></tr></thead>
                 <tbody className="text-sm">
                   {profilesData.length === 0 ? (
                     <tr><td colSpan={5} className="text-center py-8 text-slate-400">Abhi tak koi signup nahi hua</td></tr>
@@ -681,10 +632,7 @@ export default function App() {
                       <td className="py-3.5 px-2 text-slate-400 text-xs">{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</td>
                       <td className="py-3.5 px-2 text-center">
                         {profile.phone && profile.phone !== 'N/A' ? (
-                          <button type="button" onClick={() => window.open(`https://wa.me/92${profile.phone.replace(/^0/, '').replace(/\D/g, '')}`, '_blank')}
-                            className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 px-3 py-1 rounded-md text-xs font-bold transition-all">
-                            💬 WhatsApp
-                          </button>
+                          <button type="button" onClick={() => window.open(`https://wa.me/92${profile.phone.replace(/^0/, '').replace(/\D/g, '')}`, '_blank')} className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 px-3 py-1 rounded-md text-xs font-bold transition-all">💬 WhatsApp</button>
                         ) : <span className="text-slate-600 text-xs">No phone</span>}
                       </td>
                     </tr>
@@ -741,11 +689,7 @@ export default function App() {
             <h2 className="text-xl font-bold mb-4 text-blue-400">All Shipments History</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-slate-400 border-b border-slate-700 text-sm">
-                    <th className="pb-3 px-2">AWB / Tracking</th><th className="pb-3 px-2">Sender</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2 text-center">Action</th>
-                  </tr>
-                </thead>
+                <thead><tr className="text-slate-400 border-b border-slate-700 text-sm"><th className="pb-3 px-2">AWB / Tracking</th><th className="pb-3 px-2">Sender</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2 text-center">Action</th></tr></thead>
                 <tbody className="text-sm">
                   {ledgerData.map((item) => (
                     <tr key={item.id} className="border-b border-slate-800 hover:bg-slate-800/40 transition-all">
@@ -774,11 +718,7 @@ export default function App() {
               <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 shadow-xl">
                 <h2 className="text-xl font-bold mb-4 text-blue-400">Customer Directory</h2>
                 <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="text-slate-400 border-b border-slate-700 text-sm">
-                      <th className="pb-3 px-2">Customer Name</th><th className="pb-3 px-2">Phone</th><th className="pb-3 px-2">Email</th><th className="pb-3 px-2">Total Parcels</th><th className="pb-3 px-2 text-center">Action</th>
-                    </tr>
-                  </thead>
+                  <thead><tr className="text-slate-400 border-b border-slate-700 text-sm"><th className="pb-3 px-2">Customer Name</th><th className="pb-3 px-2">Phone</th><th className="pb-3 px-2">Email</th><th className="pb-3 px-2">Total Parcels</th><th className="pb-3 px-2 text-center">Action</th></tr></thead>
                   <tbody className="text-sm">
                     {getUniqueCustomers().map((cust, idx) => (
                       <tr key={idx} className="border-b border-slate-800 hover:bg-slate-800/40 transition-all">
@@ -787,18 +727,16 @@ export default function App() {
                         <td className="py-3.5 px-2 text-slate-300">{cust.email}</td>
                         <td className="py-3.5 px-2 font-mono"><span className="bg-slate-800 px-2 py-0.5 rounded text-green-400 font-bold">{cust.totalShipments}</span></td>
                         <td className="py-3.5 px-2 text-center flex gap-2 justify-center">
-  <button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 hover:text-white transition-all">View Ledger</button>
-  <button type="button" onClick={async () => {
-    if(window.confirm(`"${cust.name}" ko directory se hatana chahte ho? Shipment data safe rahega.`)) {
-      if (cust.hasProfile) {
-        await supabase.from('profiles').delete().eq('id', cust.profileId);
-        fetchProfiles();
-      } else {
-        alert('Yeh customer sirf ledger mein hai, profile nahi hai — delete nahi ho sakta.');
-      }
-    }
-  }} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-600 hover:text-white transition-all">🗑️ Del</button>
-</td>
+                          <button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 hover:text-white transition-all">View Ledger</button>
+                          {isAdmin && (
+                            <button type="button" onClick={async () => {
+                              if(window.confirm(`"${cust.name}" ko directory se hatana chahte ho? Shipment data safe rahega.`)) {
+                                if (cust.hasProfile) { await supabase.from('profiles').delete().eq('id', cust.profileId); fetchProfiles(); }
+                                else { alert('Yeh customer sirf ledger mein hai — delete nahi ho sakta.'); }
+                              }
+                            }} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-600 hover:text-white transition-all">🗑️ Del</button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -819,10 +757,7 @@ export default function App() {
                 })()}
                 <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 shadow-xl">
                   <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                    <div>
-                      <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider">Premium Ledger Panel</span>
-                      <h2 className="text-2xl font-black text-white mt-1">{selectedCustomer}</h2>
-                    </div>
+                    <div><span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider">Premium Ledger Panel</span><h2 className="text-2xl font-black text-white mt-1">{selectedCustomer}</h2></div>
                     <div className="flex gap-2">
                       <button type="button" onClick={() => shareLedgerWhatsApp(selectedCustomer)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all">🟢 WhatsApp Share</button>
                       <button type="button" onClick={() => setSelectedCustomer(null)} className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-bold border border-slate-700 transition-all">Back to List</button>
@@ -886,7 +821,7 @@ export default function App() {
               <div><label className="text-xs text-slate-400">Weight (kg)</label><input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.weight} onChange={(e) => setEditFormData({...editFormData, weight: e.target.value})} /></div>
               <div className="col-span-2 border-t border-slate-800 pt-3 mt-1 text-blue-400 font-bold">Forwarding & Route Vendor Details</div>
               <div><label className="text-xs text-slate-400">Forward Vendor Partner</label><select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.forward_vendor} onChange={(e) => setEditFormData({...editFormData, forward_vendor: e.target.value})}><option value="">Select Vendor</option><option value="DHL">DHL Forwarding</option><option value="FedEx">FedEx Express</option><option value="UPS">UPS Cargo</option><option value="Skynet">Skynet Network</option></select></div>
-              <div><label className="text-xs text-slate-400">Forwarding Tracking Number (AWB)</label><input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" placeholder="e.g. DHL-9832141" value={editFormData.forwarding_awb} onChange={(e) => setEditFormData({...editFormData, forwarding_awb: e.target.value})} /></div>
+              <div><label className="text-xs text-slate-400">Forwarding Tracking Number</label><input className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" placeholder="e.g. DHL-9832141" value={editFormData.forwarding_awb} onChange={(e) => setEditFormData({...editFormData, forwarding_awb: e.target.value})} /></div>
               <div className="col-span-2 border-t border-slate-800 pt-3 mt-1 text-emerald-400 font-bold">Ledger Accounts & Profit Tracking</div>
               <div><label className="text-xs text-slate-400">Remote Status</label><select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.remote_status} onChange={(e) => setEditFormData({...editFormData, remote_status: e.target.value})}><option value="Non-Remote">Non-Remote</option><option value="Remote">Remote Area</option></select></div>
               <div><label className="text-xs text-slate-400">Remote Charges</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.remote_charges} onChange={(e) => setEditFormData({...editFormData, remote_charges: e.target.value})} /></div>
