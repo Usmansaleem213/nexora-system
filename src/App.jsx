@@ -248,7 +248,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
     const { error } = await supabase.from('customer_ledgers').insert([{
       nexora_airwaybill: nexoraTracking, receiver: formData.receiver_name, destination: formData.destination,
       weight: formData.weight, service: formData.service, sender_name: formData.sender_name,
-      created_at: new Date(formData.shipment_date + 'T' + new Date().toTimeString().split(' ')[0]).toISOString(),
+      created_at: new Date(formData.shipment_date).toISOString(),
       sender_address: formData.sender_address, sender_phone: formData.sender_phone, sender_email: formData.sender_email,
       receiver_address: formData.receiver_address, receiver_phone: formData.receiver_phone, receiver_email: formData.receiver_email,
       remote_status: 'Non-Remote', debit: 0, credit: 0, petrol: 0, remote_charges: 0,
