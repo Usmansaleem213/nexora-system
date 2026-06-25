@@ -417,10 +417,6 @@ export default function App() {
               <span>🆕</span> Registered Users
               {profilesData.length > 0 && <span className="ml-auto bg-blue-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{profilesData.length}</span>}
             </button>
-            <button type="button" onClick={() => { setActiveTab('vendors'); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'vendors' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
-              <span>🏢</span> Vendors
-            </button>
           </nav>
         </div>
         <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">v3.0 • Premium ERP Suite</div>
@@ -967,17 +963,8 @@ export default function App() {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="text-xs text-amber-400 font-bold block mb-1">💸 Total Due (Dena Hai)</label>
-                    <input type="number"
-                      className="w-full bg-slate-800 border border-amber-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-amber-500"
-                      placeholder="0"
-                      value={vendorForm.total_due}
-                      onChange={(e) => setVendorForm({...vendorForm, total_due: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-green-400 font-bold block mb-1">✅ Total Paid (De Diya)</label>
+                  <div className="col-span-2">
+                    <label className="text-xs text-green-400 font-bold block mb-1">✅ Total Paid (Kitna De Diya)</label>
                     <input type="number"
                       className="w-full bg-slate-800 border border-green-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
                       placeholder="0"
@@ -1043,14 +1030,9 @@ export default function App() {
                               </button>
                             </div>
                           </div>
-                          <div className="grid grid-cols-3 gap-4">
+                          <div className="grid grid-cols-2 gap-4">
                             <div className="bg-slate-800/60 rounded-lg p-3 text-center">
-                              <p className="text-xs text-amber-400 font-bold mb-1">💸 Total Due</p>
-                              <p className="text-xl font-black text-amber-400">Rs {Number(v.total_due || 0).toLocaleString()}</p>
-                              <p className="text-xs text-slate-500">Dena tha</p>
-                            </div>
-                            <div className="bg-slate-800/60 rounded-lg p-3 text-center">
-                              <p className="text-xs text-green-400 font-bold mb-1">✅ Paid</p>
+                              <p className="text-xs text-green-400 font-bold mb-1">✅ Total Paid</p>
                               <p className="text-xl font-black text-green-400">Rs {Number(v.total_paid || 0).toLocaleString()}</p>
                               <p className="text-xs text-slate-500">De diya</p>
                             </div>
@@ -1089,14 +1071,8 @@ export default function App() {
                               value={editVendorForm.name}
                               onChange={(e) => setEditVendorForm({...editVendorForm, name: e.target.value})} required />
                           </div>
-                          <div>
-                            <label className="text-xs text-amber-400 font-bold block mb-1">💸 Total Due</label>
-                            <input type="number" className="w-full bg-slate-800 border border-amber-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-amber-500"
-                              value={editVendorForm.total_due}
-                              onChange={(e) => setEditVendorForm({...editVendorForm, total_due: e.target.value})} />
-                          </div>
-                          <div>
-                            <label className="text-xs text-green-400 font-bold block mb-1">✅ Total Paid</label>
+                          <div className="col-span-2">
+                            <label className="text-xs text-green-400 font-bold block mb-1">✅ Total Paid (Kitna De Diya)</label>
                             <input type="number" className="w-full bg-slate-800 border border-green-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
                               value={editVendorForm.total_paid}
                               onChange={(e) => setEditVendorForm({...editVendorForm, total_paid: e.target.value})} />
