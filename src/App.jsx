@@ -37,6 +37,14 @@ export default function App() {
   });
   const [trackingMsg, setTrackingMsg] = useState('');
 
+  // VENDOR STATES
+  const [vendors, setVendors] = useState([]);
+  const [vendorForm, setVendorForm] = useState({ name: '', total_due: 0, total_paid: 0, notes: '' });
+  const [vendorMsg, setVendorMsg] = useState('');
+  const [editVendorId, setEditVendorId] = useState(null);
+  const [editVendorForm, setEditVendorForm] = useState({ name: '', total_due: 0, total_paid: 0, notes: '' });
+  const [showAddVendor, setShowAddVendor] = useState(false);
+
   const fetchLedger = async () => {
     const { data } = await supabase
       .from('customer_ledgers')
@@ -63,10 +71,60 @@ export default function App() {
     if (data) setProfilesData(data);
   };
 
+  // VENDOR FUNCTIONS
+  const fetchVendors = async () => {
+    const { data } = await supabase.from('vendors').select('*').order('id', { ascending: false });
+    if (data) setVendors(data);
+  };
+
+  const handleAddVendor = async (e) => {
+    e.preventDefault();
+    const { error } = await supabase.from('vendors').insert([{
+      name: vendorForm.name,
+      total_due: Number(vendorForm.total_due),
+      total_paid: Number(vendorForm.total_paid),
+      notes: vendorForm.notes
+    }]);
+    if (!error) {
+      setVendorMsg('✅ Vendor add ho gaya!');
+      setVendorForm({ name: '', total_due: 0, total_paid: 0, notes: '' });
+      setShowAddVendor(false);
+      fetchVendors();
+      setTimeout(() => setVendorMsg(''), 3000);
+    } else {
+      setVendorMsg('❌ Error: ' + error.message);
+    }
+  };
+
+  const handleEditVendor = (v) => {
+    setEditVendorId(v.id);
+    setEditVendorForm({ name: v.name, total_due: v.total_due || 0, total_paid: v.total_paid || 0, notes: v.notes || '' });
+  };
+
+  const handleUpdateVendor = async (e) => {
+    e.preventDefault();
+    const { error } = await supabase.from('vendors').update({
+      name: editVendorForm.name,
+      total_due: Number(editVendorForm.total_due),
+      total_paid: Number(editVendorForm.total_paid),
+      notes: editVendorForm.notes
+    }).eq('id', editVendorId);
+    if (!error) { setEditVendorId(null); fetchVendors(); }
+    else alert('Update failed: ' + error.message);
+  };
+
+  const handleDeleteVendor = async (id) => {
+    if (window.confirm('Is vendor ko delete karein?')) {
+      await supabase.from('vendors').delete().eq('id', id);
+      fetchVendors();
+    }
+  };
+
   useEffect(() => {
     fetchLedger();
     fetchPending();
     fetchProfiles();
+    fetchVendors();
   }, []);
 
   // ─── TRACKING STATUS OPTIONS ───────────────────────────────────────────────
@@ -350,10 +408,18 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'tracking_control' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
               <span>🗺️</span> Tracking Control
             </button>
+            <button type="button" onClick={() => { setActiveTab('vendors'); setLabelData(null); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'vendors' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+              <span>🏢</span> Vendors
+            </button>
             <button type="button" onClick={() => { setActiveTab('registered'); setLabelData(null); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'registered' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
               <span>🆕</span> Registered Users
               {profilesData.length > 0 && <span className="ml-auto bg-blue-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{profilesData.length}</span>}
+            </button>
+            <button type="button" onClick={() => { setActiveTab('vendors'); setLabelData(null); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'vendors' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+              <span>🏢</span> Vendors
             </button>
           </nav>
         </div>
@@ -871,9 +937,195 @@ export default function App() {
             )}
           </div>
         )}
-      </div>
+        {/* ─── VENDORS TAB ──────────────────────────────────────────────────── */}
+        {activeTab === 'vendors' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-black text-white">🏢 Vendor Management</h2>
+                <p className="text-slate-400 text-sm mt-1">Vendors ka hisaab — total due, paid aur baaki</p>
+              </div>
+              <button type="button"
+                onClick={() => setShowAddVendor(!showAddVendor)}
+                className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-2.5 rounded-lg transition-all text-sm">
+                {showAddVendor ? '✕ Cancel' : '➕ New Vendor'}
+              </button>
+            </div>
 
-      {/* EDIT MODAL */}
+            {/* ADD VENDOR FORM */}
+            {showAddVendor && (
+              <div className="bg-slate-900 border border-rose-500/30 rounded-xl p-6 mb-6">
+                <h3 className="font-bold text-rose-400 mb-4">Naya Vendor Add Karo</h3>
+                <form onSubmit={handleAddVendor} className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="col-span-2">
+                    <label className="text-xs text-slate-400 block mb-1">Vendor Name *</label>
+                    <input
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-rose-500"
+                      placeholder="e.g. DHL, FedEx, Skynet, Ali Bhai..."
+                      value={vendorForm.name}
+                      onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-amber-400 font-bold block mb-1">💸 Total Due (Dena Hai)</label>
+                    <input type="number"
+                      className="w-full bg-slate-800 border border-amber-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-amber-500"
+                      placeholder="0"
+                      value={vendorForm.total_due}
+                      onChange={(e) => setVendorForm({...vendorForm, total_due: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-green-400 font-bold block mb-1">✅ Total Paid (De Diya)</label>
+                    <input type="number"
+                      className="w-full bg-slate-800 border border-green-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
+                      placeholder="0"
+                      value={vendorForm.total_paid}
+                      onChange={(e) => setVendorForm({...vendorForm, total_paid: e.target.value})}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-xs text-slate-400 block mb-1">Notes (optional)</label>
+                    <input
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-rose-500"
+                      placeholder="Koi note..."
+                      value={vendorForm.notes}
+                      onChange={(e) => setVendorForm({...vendorForm, notes: e.target.value})}
+                    />
+                  </div>
+                  {vendorMsg && (
+                    <div className={`col-span-2 text-xs p-3 rounded-lg ${vendorMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
+                      {vendorMsg}
+                    </div>
+                  )}
+                  <div className="col-span-2">
+                    <button type="submit" className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-lg transition-all">
+                      ➕ Vendor Add Karo
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* VENDORS LIST */}
+            {vendors.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-700 rounded-xl p-16 text-center">
+                <p className="text-4xl mb-4">🏢</p>
+                <p className="text-slate-400 font-medium">Abhi koi vendor nahi hai</p>
+                <p className="text-slate-500 text-sm mt-1">Upar "New Vendor" button se add karo</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {vendors.map((v) => {
+                  const baaki = Number(v.total_due || 0) - Number(v.total_paid || 0);
+                  const isEditing = editVendorId === v.id;
+                  return (
+                    <div key={v.id} className={`bg-slate-900 rounded-xl border p-5 transition-all ${baaki > 0 ? 'border-rose-500/30' : 'border-green-500/30'}`}>
+                      {!isEditing ? (
+                        // VIEW MODE
+                        <div>
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="text-xl font-black text-white">{v.name}</h3>
+                              {v.notes && <p className="text-slate-400 text-xs mt-0.5">{v.notes}</p>}
+                            </div>
+                            <div className="flex gap-2">
+                              <button type="button"
+                                onClick={() => handleEditVendor(v)}
+                                className="bg-yellow-600/20 hover:bg-yellow-600 text-yellow-400 hover:text-white border border-yellow-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                                ✏️ Edit
+                              </button>
+                              <button type="button"
+                                onClick={() => handleDeleteVendor(v.id)}
+                                className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                                🗑️ Del
+                              </button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="bg-slate-800/60 rounded-lg p-3 text-center">
+                              <p className="text-xs text-amber-400 font-bold mb-1">💸 Total Due</p>
+                              <p className="text-xl font-black text-amber-400">Rs {Number(v.total_due || 0).toLocaleString()}</p>
+                              <p className="text-xs text-slate-500">Dena tha</p>
+                            </div>
+                            <div className="bg-slate-800/60 rounded-lg p-3 text-center">
+                              <p className="text-xs text-green-400 font-bold mb-1">✅ Paid</p>
+                              <p className="text-xl font-black text-green-400">Rs {Number(v.total_paid || 0).toLocaleString()}</p>
+                              <p className="text-xs text-slate-500">De diya</p>
+                            </div>
+                            <div className={`rounded-lg p-3 text-center ${baaki > 0 ? 'bg-rose-900/20' : 'bg-green-900/20'}`}>
+                              <p className={`text-xs font-bold mb-1 ${baaki > 0 ? 'text-rose-400' : 'text-green-400'}`}>
+                                {baaki > 0 ? '🔴 Baaki' : '✅ Clear'}
+                              </p>
+                              <p className={`text-xl font-black ${baaki > 0 ? 'text-rose-400' : 'text-green-400'}`}>
+                                Rs {Math.abs(baaki).toLocaleString()}
+                              </p>
+                              <p className="text-xs text-slate-500">{baaki > 0 ? 'Dena hai' : 'Pura ho gaya'}</p>
+                            </div>
+                          </div>
+                          {/* Progress bar */}
+                          {Number(v.total_due || 0) > 0 && (
+                            <div className="mt-3">
+                              <div className="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>Payment Progress</span>
+                                <span>{Math.min(100, Math.round((Number(v.total_paid || 0) / Number(v.total_due || 1)) * 100))}%</span>
+                              </div>
+                              <div className="w-full bg-slate-700 rounded-full h-2">
+                                <div
+                                  className="bg-green-500 h-2 rounded-full transition-all"
+                                  style={{ width: `${Math.min(100, (Number(v.total_paid || 0) / Number(v.total_due || 1)) * 100)}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        // EDIT MODE
+                        <form onSubmit={handleUpdateVendor} className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="col-span-2">
+                            <label className="text-xs text-slate-400 block mb-1">Vendor Name *</label>
+                            <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-rose-500"
+                              value={editVendorForm.name}
+                              onChange={(e) => setEditVendorForm({...editVendorForm, name: e.target.value})} required />
+                          </div>
+                          <div>
+                            <label className="text-xs text-amber-400 font-bold block mb-1">💸 Total Due</label>
+                            <input type="number" className="w-full bg-slate-800 border border-amber-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-amber-500"
+                              value={editVendorForm.total_due}
+                              onChange={(e) => setEditVendorForm({...editVendorForm, total_due: e.target.value})} />
+                          </div>
+                          <div>
+                            <label className="text-xs text-green-400 font-bold block mb-1">✅ Total Paid</label>
+                            <input type="number" className="w-full bg-slate-800 border border-green-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
+                              value={editVendorForm.total_paid}
+                              onChange={(e) => setEditVendorForm({...editVendorForm, total_paid: e.target.value})} />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-xs text-slate-400 block mb-1">Notes</label>
+                            <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm"
+                              value={editVendorForm.notes}
+                              onChange={(e) => setEditVendorForm({...editVendorForm, notes: e.target.value})} />
+                          </div>
+                          <div className="col-span-2 bg-slate-800/40 rounded-lg p-3 text-center">
+                            <p className="text-xs text-slate-400">Baaki Rahega:</p>
+                            <p className={`text-2xl font-black mt-1 ${(Number(editVendorForm.total_due||0) - Number(editVendorForm.total_paid||0)) > 0 ? 'text-rose-400' : 'text-green-400'}`}>
+                              Rs {Math.max(0, Number(editVendorForm.total_due||0) - Number(editVendorForm.total_paid||0)).toLocaleString()}
+                            </p>
+                          </div>
+                          <button type="submit" className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-lg transition-all">✅ Save</button>
+                          <button type="button" onClick={() => setEditVendorId(null)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 rounded-lg transition-all">Cancel</button>
+                        </form>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 p-6 rounded-xl border border-slate-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
