@@ -300,8 +300,8 @@ export default function App({ isAdmin = true, currentUserId = null }) {
   const getCalculatedLedger = (customerName) => {
     let filtered = ledgerData.filter(item => item.sender_name && item.sender_name.trim() === customerName);
     if (searchTerm) filtered = filtered.filter(item => (item.nexora_airwaybill && item.nexora_airwaybill.toLowerCase().includes(searchTerm.toLowerCase())) || (item.receiver && item.receiver.toLowerCase().includes(searchTerm.toLowerCase())) || (item.forwarding_awb && item.forwarding_awb.toLowerCase().includes(searchTerm.toLowerCase())));
-    if (startDate) filtered = filtered.filter(item => item.date && new Date(item.created_at) >= new Date(startDate));
-    if (endDate) filtered = filtered.filter(item => item.date && new Date(item.created_at) <= new Date(endDate + 'T23:59:59'));
+    if (startDate) filtered = filtered.filter(item => item.date && new Date(item.date) >= new Date(startDate));
+    if (endDate) filtered = filtered.filter(item => item.date && new Date(item.date) <= new Date(endDate + 'T23:59:59'));
     const chronological = [...filtered].reverse();
     let runningSum = 0;
     const withBalance = chronological.map((item) => {
@@ -601,7 +601,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
                         <div><p className="text-xs text-slate-400 mb-1">Customer</p><p className="font-bold text-white">{item.sender_name}</p><p className="text-xs text-slate-400">{item.sender_email}</p></div>
                         <div><p className="text-xs text-slate-400 mb-1">Receiver</p><p className="font-bold text-white">{item.receiver}</p><p className="text-xs text-slate-400">{item.receiver_phone}</p></div>
                         <div><p className="text-xs text-slate-400 mb-1">Destination</p><p className="font-bold text-blue-400">{item.destination}</p><p className="text-xs text-slate-400">{item.weight} KG • {item.service}</p></div>
-                        <div><p className="text-xs text-slate-400 mb-1">AWB</p><p className="font-mono text-xs text-slate-300">{item.nexora_airwaybill}</p><p className="text-xs text-slate-400">{item.date ? new Date(item.created_at).toLocaleDateString() : 'N/A'}</p></div>
+                        <div><p className="text-xs text-slate-400 mb-1">AWB</p><p className="font-mono text-xs text-slate-300">{item.nexora_airwaybill}</p><p className="text-xs text-slate-400">{item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}</p></div>
                       </div>
                       <div className="flex gap-2 ml-6">
                         <button type="button" onClick={() => handleApprovePending(item)} className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">✅ Approve</button>
@@ -815,7 +815,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
                         {getCalculatedLedger(selectedCustomer).map((item, idx, arr) => (
                           <tr key={item.id} className="hover:bg-slate-800/30 transition-all">
                             <td className="py-3 px-2 text-slate-500 font-mono">{arr.length - idx}</td>
-                            <td className="py-3 px-2 text-slate-400">{item.date ? new Date(item.created_at).toLocaleDateString() : 'N/A'}</td>
+                            <td className="py-3 px-2 text-slate-400">{item.date ? new Date(item.date).toLocaleDateString() : 'N/A'}</td>
                             <td className="py-3 px-2 font-bold text-blue-400">{item.service}</td>
                             <td className="py-3 px-2 font-mono font-bold text-slate-300">{item.nexora_airwaybill}</td>
                             <td className="py-3 px-2 font-mono text-slate-400">{item.forwarding_awb ? `${item.forward_vendor || 'Partner'}: ${item.forwarding_awb}` : 'Pending'}</td>
