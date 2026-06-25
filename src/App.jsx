@@ -650,7 +650,37 @@ export default function App({ isAdmin = true, currentUserId = null }) {
               <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-slate-900 p-8 rounded-xl border border-slate-700 shadow-xl">
                 <h2 className="text-2xl font-bold mb-6 text-blue-400">New Shipment Entry</h2>
                 <div className="grid grid-cols-2 gap-4">
-                  <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Sender Name" value={formData.sender_name} onChange={(e) => setFormData({...formData, sender_name: e.target.value})} required />
+                  <div className="relative">
+  <input 
+    className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white w-full" 
+    placeholder="Sender Name (existing customer select karo ya naya likho)" 
+    list="customer-suggestions"
+    value={formData.sender_name} 
+    onChange={(e) => {
+      const typedName = e.target.value;
+      setFormData({...formData, sender_name: typedName});
+      
+      // Agar existing customer ka naam match ho jaye, baaki details auto-fill karo
+      const matchedCustomer = getUniqueCustomers().find(c => c.name.toLowerCase() === typedName.toLowerCase());
+      if (matchedCustomer) {
+        const fullDetails = ledgerData.find(item => item.sender_name?.trim().toLowerCase() === typedName.toLowerCase());
+        setFormData(prev => ({
+          ...prev,
+          sender_name: typedName,
+          sender_phone: matchedCustomer.phone !== 'N/A' ? matchedCustomer.phone : (fullDetails?.sender_phone || ''),
+          sender_email: matchedCustomer.email !== 'N/A' ? matchedCustomer.email : (fullDetails?.sender_email || ''),
+          sender_address: fullDetails?.sender_address || ''
+        }));
+      }
+    }} 
+    required 
+  />
+  <datalist id="customer-suggestions">
+    {getUniqueCustomers().map((cust, idx) => (
+      <option key={idx} value={cust.name} />
+    ))}
+  </datalist>
+</div>
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Receiver Name" value={formData.receiver_name} onChange={(e) => setFormData({...formData, receiver_name: e.target.value})} required />
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Sender Address" value={formData.sender_address} onChange={(e) => setFormData({...formData, sender_address: e.target.value})} />
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Receiver Address" value={formData.receiver_address} onChange={(e) => setFormData({...formData, receiver_address: e.target.value})} />
@@ -827,7 +857,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
               <div><label className="text-xs text-slate-400">Remote Charges</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.remote_charges} onChange={(e) => setEditFormData({...editFormData, remote_charges: e.target.value})} /></div>
               <div><label className="text-xs text-slate-400">Debit Amount</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.debit} onChange={(e) => setEditFormData({...editFormData, debit: e.target.value})} /></div>
               <div><label className="text-xs text-slate-400">Petrol Surcharge</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} /></div>
-              <div><label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
+              <div><label className="text-xs text---amber-500 font-bold">💸 Nexora Buying Cost</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
               <div><label className="text-xs text-green-400 font-bold">Credit Amount</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-green-600 text-white font-mono" value={editFormData.credit} onChange={(e) => setEditFormData({...editFormData, credit: e.target.value})} /></div>
               <div className="col-span-2"><label className="text-xs text-slate-400">Service Label</label><select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.service} onChange={(e) => setEditFormData({...editFormData, service: e.target.value})} required><option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option></select></div>
               <div className="col-span-2 flex gap-2 mt-4">
