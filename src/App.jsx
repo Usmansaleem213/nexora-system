@@ -29,12 +29,10 @@ export default function App({ isAdmin = true, currentUserId = null }) {
     buying_rate: 0, forwarding_awb: '', forward_vendor: ''
   });
 
-  // STAFF MANAGEMENT STATES
   const [staffList, setStaffList] = useState([]);
   const [staffEmail, setStaffEmail] = useState('');
   const [staffMsg, setStaffMsg] = useState('');
 
-  // TRACKING STATES
   const [trackingAwb, setTrackingAwb] = useState('');
   const [trackingUpdates, setTrackingUpdates] = useState([]);
   const [selectedAwbShipment, setSelectedAwbShipment] = useState(null);
@@ -70,43 +68,6 @@ export default function App({ isAdmin = true, currentUserId = null }) {
     if (isAdmin) fetchStaff();
   }, [isAdmin]);
 
-  // STAFF FUNCTIONS
-  const handleAddStaff = async (e) => {
-    e.preventDefault();
-    setStaffMsg('');
-
-    // Pehle user dhundo email se
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('email', staffEmail)
-      .single();
-
-    if (!profileData) {
-      setStaffMsg('❌ Yeh email website pe registered nahi hai — pehle signup karna hoga!');
-      return;
-    }
-
-    // Auth user ID dhundo
-    const { data: authUsers } = await supabase.auth.admin?.listUsers?.() || { data: null };
-
-    // Direct user_roles mein check karo
-    const { data: existingRole } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', profileData.id)
-      .single();
-
-    if (existingRole) {
-      setStaffMsg('❌ Is user ka role already set hai: ' + existingRole.role);
-      return;
-    }
-
-    // Staff add karo — profileData.id use karo (ye uuid hoga agar sahi set hai)
-    // Pehle auth se user ID nikalni hogi
-    setStaffMsg('⚠️ Staff add karne ke liye pehle us user ka UUID chahiye. Supabase Authentication mein jaake us email ka UID copy karo aur mujhe batao!');
-  };
-
   const handleAddStaffByUUID = async (uuid) => {
     const { error } = await supabase.from('user_roles').insert([{
       user_id: uuid,
@@ -130,7 +91,6 @@ export default function App({ isAdmin = true, currentUserId = null }) {
     }
   };
 
-  // TRACKING STATUS OPTIONS
   const trackingStatuses = [
     { value: 'Shipment Booked', label: '📋 Shipment Booked', color: 'bg-blue-900/40 text-blue-400 border-blue-500/30', dot: 'bg-blue-500' },
     { value: 'Picked Up', label: '🛵 Picked Up', color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/30', dot: 'bg-cyan-500' },
@@ -158,7 +118,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
     if (!shipment) { setTrackingMsg('❌ Koi shipment nahi mila is AWB se'); setSelectedAwbShipment(null); setTrackingUpdates([]); return; }
     setSelectedAwbShipment(shipment);
     setTrackingMsg('');
-    const { data } = await supabase.from('tracking_updates').select('*').eq('awb', shipment.nexora_airwaybill).order('created_at', { ascending: false });
+    const { data } = await supabase.from('tracking_updates').select('*').eq('awb', shipment.nexora_airwaybill).order('date', { ascending: false });
     if (data) setTrackingUpdates(data);
   };
 
@@ -169,19 +129,19 @@ export default function App({ isAdmin = true, currentUserId = null }) {
     const { error } = await supabase.from('tracking_updates').insert([{
       awb: selectedAwbShipment.nexora_airwaybill,
       location: newUpdate.location, status: newUpdate.status,
-      description: newUpdate.description, created_at: insertTime
+      description: newUpdate.description, date: insertTime
     }]);
     if (!error) {
       setTrackingMsg('✅ Tracking update add ho gaya!');
       setNewUpdate({ location: '', status: 'Picked Up', description: '', custom_time: '' });
-      const { data } = await supabase.from('tracking_updates').select('*').eq('awb', selectedAwbShipment.nexora_airwaybill).order('created_at', { ascending: false });
+      const { data } = await supabase.from('tracking_updates').select('*').eq('awb', selectedAwbShipment.nexora_airwaybill).order('date', { ascending: false });
       if (data) setTrackingUpdates(data);
     } else { setTrackingMsg('❌ Error: ' + error.message); }
   };
 
   const handleDeleteTrackingUpdate = async (id) => {
     await supabase.from('tracking_updates').delete().eq('id', id);
-    const { data } = await supabase.from('tracking_updates').select('*').eq('awb', selectedAwbShipment.nexora_airwaybill).order('created_at', { ascending: false });
+    const { data } = await supabase.from('tracking_updates').select('*').eq('awb', selectedAwbShipment.nexora_airwaybill).order('date', { ascending: false });
     if (data) setTrackingUpdates(data);
   };
 
@@ -372,7 +332,6 @@ export default function App({ isAdmin = true, currentUserId = null }) {
               <span>🆕</span> Registered Users
               {profilesData.length > 0 && <span className="ml-auto bg-blue-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{profilesData.length}</span>}
             </button>
-            {/* SIRF ADMIN KO STAFF MANAGEMENT DIKHEGA */}
             {isAdmin && (
               <button type="button" onClick={() => { setActiveTab('staff'); setLabelData(null); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'staff' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
@@ -428,13 +387,12 @@ export default function App({ isAdmin = true, currentUserId = null }) {
           </div>
         )}
 
-        {/* STAFF MANAGEMENT — SIRF ADMIN DEKH SAKTA HAI */}
+        {/* STAFF MANAGEMENT */}
         {activeTab === 'staff' && isAdmin && (
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">🔧 Staff Management</h2>
             <p className="text-slate-400 mb-6">Apne staff members ko manage karo — sirf tum yeh dekh sakte ho</p>
 
-            {/* ADD STAFF */}
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
               <h3 className="font-bold text-emerald-400 mb-4">Staff Member Add Karo</h3>
               <p className="text-slate-400 text-xs mb-4">Staff member ko pehle website pe signup karna hoga — phir unka Supabase UUID yahan daalo!</p>
@@ -472,7 +430,6 @@ export default function App({ isAdmin = true, currentUserId = null }) {
               </div>
             </div>
 
-            {/* CURRENT STAFF LIST */}
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
               <h3 className="font-bold text-slate-300 mb-4">Current Staff Members ({staffList.length})</h3>
               {staffList.length === 0 ? (
@@ -566,7 +523,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
                                     {isLatest && <span className="ml-2 text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">LATEST</span>}
                                     <p className="font-bold text-white text-sm">📍 {update.location}</p>
                                     {update.description && <p className="text-slate-400 text-xs mt-1">{update.description}</p>}
-                                    <p className="text-slate-500 text-xs mt-1.5">🕐 {new Date(update.created_at).toLocaleString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                                    <p className="text-slate-500 text-xs mt-1.5">🕐 {new Date(update.date).toLocaleString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                   </div>
                                   <button type="button" onClick={() => handleDeleteTrackingUpdate(update.id)} className="text-red-500/50 hover:text-red-400 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all flex-shrink-0">🗑️</button>
                                 </div>
@@ -631,7 +588,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
                       <td className="py-3.5 px-2 font-bold text-white">👤 {profile.full_name || 'N/A'}</td>
                       <td className="py-3.5 px-2 text-slate-300">{profile.email || 'N/A'}</td>
                       <td className="py-3.5 px-2 text-slate-300 font-mono">{profile.phone || 'N/A'}</td>
-                      <td className="py-3.5 px-2 text-slate-400 text-xs">{profile.date ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</td>
+                      <td className="py-3.5 px-2 text-slate-400 text-xs">{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</td>
                       <td className="py-3.5 px-2 text-center">
                         {profile.phone && profile.phone !== 'N/A' ? (
                           <button type="button" onClick={() => window.open(`https://wa.me/92${profile.phone.replace(/^0/, '').replace(/\D/g, '')}`, '_blank')} className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 px-3 py-1 rounded-md text-xs font-bold transition-all">💬 WhatsApp</button>
@@ -653,36 +610,34 @@ export default function App({ isAdmin = true, currentUserId = null }) {
                 <h2 className="text-2xl font-bold mb-6 text-blue-400">New Shipment Entry</h2>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="relative">
-  <input 
-    className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white w-full" 
-    placeholder="Sender Name (existing customer select karo ya naya likho)" 
-    list="customer-suggestions"
-    value={formData.sender_name} 
-    onChange={(e) => {
-      const typedName = e.target.value;
-      setFormData({...formData, sender_name: typedName});
-      
-      // Agar existing customer ka naam match ho jaye, baaki details auto-fill karo
-      const matchedCustomer = getUniqueCustomers().find(c => c.name.toLowerCase() === typedName.toLowerCase());
-      if (matchedCustomer) {
-        const fullDetails = ledgerData.find(item => item.sender_name?.trim().toLowerCase() === typedName.toLowerCase());
-        setFormData(prev => ({
-          ...prev,
-          sender_name: typedName,
-          sender_phone: matchedCustomer.phone !== 'N/A' ? matchedCustomer.phone : (fullDetails?.sender_phone || ''),
-          sender_email: matchedCustomer.email !== 'N/A' ? matchedCustomer.email : (fullDetails?.sender_email || ''),
-          sender_address: fullDetails?.sender_address || ''
-        }));
-      }
-    }} 
-    required 
-  />
-  <datalist id="customer-suggestions">
-    {getUniqueCustomers().map((cust, idx) => (
-      <option key={idx} value={cust.name} />
-    ))}
-  </datalist>
-</div>
+                    <input 
+                      className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white w-full" 
+                      placeholder="Sender Name (existing customer select karo ya naya likho)" 
+                      list="customer-suggestions"
+                      value={formData.sender_name} 
+                      onChange={(e) => {
+                        const typedName = e.target.value;
+                        setFormData({...formData, sender_name: typedName});
+                        const matchedCustomer = getUniqueCustomers().find(c => c.name.toLowerCase() === typedName.toLowerCase());
+                        if (matchedCustomer) {
+                          const fullDetails = ledgerData.find(item => item.sender_name?.trim().toLowerCase() === typedName.toLowerCase());
+                          setFormData(prev => ({
+                            ...prev,
+                            sender_name: typedName,
+                            sender_phone: matchedCustomer.phone !== 'N/A' ? matchedCustomer.phone : (fullDetails?.sender_phone || ''),
+                            sender_email: matchedCustomer.email !== 'N/A' ? matchedCustomer.email : (fullDetails?.sender_email || ''),
+                            sender_address: fullDetails?.sender_address || ''
+                          }));
+                        }
+                      }} 
+                      required 
+                    />
+                    <datalist id="customer-suggestions">
+                      {getUniqueCustomers().map((cust, idx) => (
+                        <option key={idx} value={cust.name} />
+                      ))}
+                    </datalist>
+                  </div>
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Receiver Name" value={formData.receiver_name} onChange={(e) => setFormData({...formData, receiver_name: e.target.value})} required />
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Sender Address" value={formData.sender_address} onChange={(e) => setFormData({...formData, sender_address: e.target.value})} />
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Receiver Address" value={formData.receiver_address} onChange={(e) => setFormData({...formData, receiver_address: e.target.value})} />
@@ -693,9 +648,9 @@ export default function App({ isAdmin = true, currentUserId = null }) {
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Destination" value={formData.destination} onChange={(e) => setFormData({...formData, destination: e.target.value})} />
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Weight (kg)" value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} />
                   <div className="col-span-2">
-  <label className="text-xs text-slate-400 mb-1 block">Shipment Date (default: aaj, change kar sakte ho purani date ke liye)</label>
-  <input type="date" className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white w-full" value={formData.shipment_date} onChange={(e) => setFormData({...formData, shipment_date: e.target.value})} />
-</div>
+                    <label className="text-xs text-slate-400 mb-1 block">Shipment Date (default: aaj, change kar sakte ho purani date ke liye)</label>
+                    <input type="date" className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white w-full" value={formData.shipment_date} onChange={(e) => setFormData({...formData, shipment_date: e.target.value})} />
+                  </div>
                   <select className="col-span-2 bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-slate-300" value={formData.service} onChange={(e) => setFormData({...formData, service: e.target.value})} required>
                     <option value="">Select Service</option>
                     <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
@@ -863,7 +818,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
               <div><label className="text-xs text-slate-400">Remote Charges</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.remote_charges} onChange={(e) => setEditFormData({...editFormData, remote_charges: e.target.value})} /></div>
               <div><label className="text-xs text-slate-400">Debit Amount</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.debit} onChange={(e) => setEditFormData({...editFormData, debit: e.target.value})} /></div>
               <div><label className="text-xs text-slate-400">Petrol Surcharge</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} /></div>
-              <div><label className="text-xs text---amber-500 font-bold">💸 Nexora Buying Cost</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
+              <div><label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
               <div><label className="text-xs text-green-400 font-bold">Credit Amount</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-green-600 text-white font-mono" value={editFormData.credit} onChange={(e) => setEditFormData({...editFormData, credit: e.target.value})} /></div>
               <div className="col-span-2"><label className="text-xs text-slate-400">Service Label</label><select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.service} onChange={(e) => setEditFormData({...editFormData, service: e.target.value})} required><option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option></select></div>
               <div className="col-span-2 flex gap-2 mt-4">
