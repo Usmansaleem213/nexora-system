@@ -25,7 +25,7 @@ export default function App() {
     destination: '', weight: '', service: '',
     remote_status: 'Non-Remote',
     debit: 0, credit: 0, petrol: 0, remote_charges: 0,
-    buying_rate: 0, forwarding_awb: '', forward_vendor: ''
+    buying_rate: 0, vendor_paid: 0, forwarding_awb: '', forward_vendor: ''
   });
 
   // TRACKING STATES
@@ -163,7 +163,9 @@ export default function App() {
     const totalWeight = ledgerData.reduce((sum, item) => sum + Number(item.weight || 0), 0);
     const totalOutstanding = ledgerData.reduce((sum, item) =>
       sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0) - Number(item.credit || 0), 0);
-    return { totalShipments, totalRevenue, totalNetProfit, totalWeight, totalOutstanding, totalCost };
+    const totalVendorPaid = ledgerData.reduce((sum, item) => sum + Number(item.vendor_paid || 0), 0);
+    const totalVendorBaaki = totalCost - totalVendorPaid;
+    return { totalShipments, totalRevenue, totalNetProfit, totalWeight, totalOutstanding, totalCost, totalVendorPaid, totalVendorBaaki };
   };
 
   const handleApprovePending = (item) => {
@@ -176,7 +178,7 @@ export default function App() {
       destination: item.destination || '', weight: item.weight || '', service: item.service || '',
       remote_status: 'Non-Remote',
       debit: 0, credit: 0, petrol: 0, remote_charges: 0,
-      buying_rate: 0, forwarding_awb: '', forward_vendor: ''
+      buying_rate: 0, vendor_paid: 0, forwarding_awb: '', forward_vendor: ''
     });
     setIsModalOpen(true);
   };
@@ -244,6 +246,7 @@ export default function App() {
       remote_status: item.remote_status || 'Non-Remote',
       debit: item.debit || 0, credit: item.credit || 0, petrol: item.petrol || 0,
       remote_charges: item.remote_charges || 0, buying_rate: item.buying_rate || 0,
+      vendor_paid: item.vendor_paid || 0,
       forwarding_awb: item.forwarding_awb || '', forward_vendor: item.forward_vendor || ''
     });
     setIsModalOpen(true);
@@ -262,6 +265,7 @@ export default function App() {
         debit: Number(editFormData.debit), credit: Number(editFormData.credit),
         petrol: Number(editFormData.petrol), remote_charges: Number(editFormData.remote_charges),
         buying_rate: Number(editFormData.buying_rate),
+        vendor_paid: Number(editFormData.vendor_paid),
         forwarding_awb: editFormData.forwarding_awb, forward_vendor: editFormData.forward_vendor,
         status: 'approved'
       })
@@ -382,8 +386,8 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-1">Vendor ko diye gaye</p>
               </div>
             </div>
-            {/* ROW 2 — 3 cards */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            {/* ROW 2 — 5 cards */}
+            <div className="grid grid-cols-5 gap-4 mb-8">
               <div className="bg-slate-900 border border-emerald-500/20 p-5 rounded-xl">
                 <p className="text-xs text-slate-400 font-medium">Net Profit</p>
                 <p className="text-2xl font-black text-emerald-400 mt-2">Rs {metrics.totalNetProfit.toLocaleString()}</p>
@@ -398,6 +402,16 @@ export default function App() {
                 <p className="text-xs text-slate-400 font-medium">Outstanding</p>
                 <p className="text-2xl font-black text-red-400 mt-2">Rs {metrics.totalOutstanding.toLocaleString()}</p>
                 <p className="text-xs text-slate-500 mt-1">Unpaid balance</p>
+              </div>
+              <div className="bg-slate-900 border border-green-500/20 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">✅ Vendor Paid</p>
+                <p className="text-2xl font-black text-green-400 mt-2">Rs {metrics.totalVendorPaid.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 mt-1">Vendor ko de diye</p>
+              </div>
+              <div className="bg-slate-900 border border-rose-500/20 p-5 rounded-xl">
+                <p className="text-xs text-slate-400 font-medium">🔴 Vendor Baaki</p>
+                <p className="text-2xl font-black text-rose-400 mt-2">Rs {metrics.totalVendorBaaki.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 mt-1">Vendor ko dene hain</p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4 mb-8">
@@ -879,6 +893,11 @@ export default function App() {
               <div><label className="text-xs text-slate-400">Petrol Surcharge</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} /></div>
               <div><label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
               <div><label className="text-xs text-green-400 font-bold">Credit Amount</label><input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-green-600 text-white font-mono" value={editFormData.credit} onChange={(e) => setEditFormData({...editFormData, credit: e.target.value})} /></div>
+              <div className="col-span-2 border border-rose-500/30 bg-rose-900/10 rounded-lg p-3">
+                <label className="text-xs text-rose-400 font-bold block mb-1">🔴 Vendor Ko Diye Gaye (Vendor Paid)</label>
+                <input type="number" className="w-full bg-slate-800 p-2 mt-1 rounded border border-rose-500 text-white font-mono text-lg" placeholder="0" value={editFormData.vendor_paid} onChange={(e) => setEditFormData({...editFormData, vendor_paid: e.target.value})} />
+                <p className="text-xs text-slate-500 mt-1">Vendor Baaki: Rs {Math.max(0, Number(editFormData.buying_rate || 0) - Number(editFormData.vendor_paid || 0)).toLocaleString()}</p>
+              </div>
               <div className="col-span-2"><label className="text-xs text-slate-400">Service Label</label><select className="w-full bg-slate-800 p-2 mt-1 rounded border border-slate-700 text-white" value={editFormData.service} onChange={(e) => setEditFormData({...editFormData, service: e.target.value})} required><option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option></select></div>
               <div className="col-span-2 flex gap-2 mt-4">
                 <button type="submit" className="flex-1 bg-green-600 py-2.5 rounded-lg font-bold hover:bg-green-500 transition-all text-white">✅ Approve & Save</button>
