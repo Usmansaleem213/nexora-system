@@ -934,172 +934,189 @@ export default function App() {
           </div>
         )}
         {/* ─── VENDORS TAB ──────────────────────────────────────────────────── */}
-        {activeTab === 'vendors' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-white">🏢 Vendor Management</h2>
-                <p className="text-slate-400 text-sm mt-1">Vendors ka hisaab — total due, paid aur baaki</p>
-              </div>
-              <button type="button"
-                onClick={() => setShowAddVendor(!showAddVendor)}
-                className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-2.5 rounded-lg transition-all text-sm">
-                {showAddVendor ? '✕ Cancel' : '➕ New Vendor'}
-              </button>
-            </div>
+        {activeTab === 'vendors' && (() => {
+          // Total buying cost from ALL shipments (automatic)
+          const totalDue = ledgerData.reduce((sum, item) => sum + Number(item.buying_rate || 0), 0);
 
-            {/* ADD VENDOR FORM */}
-            {showAddVendor && (
-              <div className="bg-slate-900 border border-rose-500/30 rounded-xl p-6 mb-6">
-                <h3 className="font-bold text-rose-400 mb-4">Naya Vendor Add Karo</h3>
-                <form onSubmit={handleAddVendor} className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="col-span-2">
-                    <label className="text-xs text-slate-400 block mb-1">Vendor Name *</label>
-                    <input
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-rose-500"
-                      placeholder="e.g. DHL, FedEx, Skynet, Ali Bhai..."
-                      value={vendorForm.name}
-                      onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-xs text-green-400 font-bold block mb-1">✅ Total Paid (Kitna De Diya)</label>
-                    <input type="number"
-                      className="w-full bg-slate-800 border border-green-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
-                      placeholder="0"
-                      value={vendorForm.total_paid}
-                      onChange={(e) => setVendorForm({...vendorForm, total_paid: e.target.value})}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-xs text-slate-400 block mb-1">Notes (optional)</label>
-                    <input
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-rose-500"
-                      placeholder="Koi note..."
-                      value={vendorForm.notes}
-                      onChange={(e) => setVendorForm({...vendorForm, notes: e.target.value})}
-                    />
-                  </div>
-                  {vendorMsg && (
-                    <div className={`col-span-2 text-xs p-3 rounded-lg ${vendorMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
-                      {vendorMsg}
-                    </div>
-                  )}
-                  <div className="col-span-2">
-                    <button type="submit" className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-lg transition-all">
-                      ➕ Vendor Add Karo
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
+          return (
+            <div className="max-w-2xl mx-auto">
+              <h2 className="text-2xl font-black text-white mb-2">🏢 Vendor Payment</h2>
+              <p className="text-slate-400 text-sm mb-6">Vendor ko kitna dena tha, diya, aur baaki hai</p>
 
-            {/* VENDORS LIST */}
-            {vendors.length === 0 ? (
-              <div className="bg-slate-900 border border-slate-700 rounded-xl p-16 text-center">
-                <p className="text-4xl mb-4">🏢</p>
-                <p className="text-slate-400 font-medium">Abhi koi vendor nahi hai</p>
-                <p className="text-slate-500 text-sm mt-1">Upar "New Vendor" button se add karo</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {vendors.map((v) => {
-                  const baaki = Number(v.total_due || 0) - Number(v.total_paid || 0);
-                  const isEditing = editVendorId === v.id;
+              {/* SUMMARY CARD */}
+              <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Overall Summary</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Total Due — automatic from ledger */}
+                  <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 text-center">
+                    <p className="text-xs text-amber-400 font-bold mb-1">💸 Total Due</p>
+                    <p className="text-2xl font-black text-amber-400">Rs {totalDue.toLocaleString()}</p>
+                    <p className="text-xs text-slate-500 mt-1">Sab shipments ka buying cost</p>
+                  </div>
+                  {/* Total Paid — from vendors table */}
+                  <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-4 text-center">
+                    <p className="text-xs text-green-400 font-bold mb-1">✅ Total Paid</p>
+                    <p className="text-2xl font-black text-green-400">
+                      Rs {vendors.reduce((s, v) => s + Number(v.total_paid || 0), 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">Vendor ko de diye</p>
+                  </div>
+                  {/* Baaki — automatic */}
+                  {(() => {
+                    const paid = vendors.reduce((s, v) => s + Number(v.total_paid || 0), 0);
+                    const baaki = totalDue - paid;
+                    return (
+                      <div className={`border rounded-xl p-4 text-center ${baaki > 0 ? 'bg-rose-900/20 border-rose-500/30' : 'bg-green-900/20 border-green-500/30'}`}>
+                        <p className={`text-xs font-bold mb-1 ${baaki > 0 ? 'text-rose-400' : 'text-green-400'}`}>
+                          {baaki > 0 ? '🔴 Baaki' : '✅ Clear'}
+                        </p>
+                        <p className={`text-2xl font-black ${baaki > 0 ? 'text-rose-400' : 'text-green-400'}`}>
+                          Rs {Math.abs(baaki).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">{baaki > 0 ? 'Abhi dena hai' : 'Sab clear!'}</p>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Progress bar */}
+                {totalDue > 0 && (() => {
+                  const paid = vendors.reduce((s, v) => s + Number(v.total_paid || 0), 0);
+                  const pct = Math.min(100, Math.round((paid / totalDue) * 100));
                   return (
-                    <div key={v.id} className={`bg-slate-900 rounded-xl border p-5 transition-all ${baaki > 0 ? 'border-rose-500/30' : 'border-green-500/30'}`}>
-                      {!isEditing ? (
-                        // VIEW MODE
-                        <div>
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="text-xl font-black text-white">{v.name}</h3>
-                              {v.notes && <p className="text-slate-400 text-xs mt-0.5">{v.notes}</p>}
-                            </div>
-                            <div className="flex gap-2">
-                              <button type="button"
-                                onClick={() => handleEditVendor(v)}
-                                className="bg-yellow-600/20 hover:bg-yellow-600 text-yellow-400 hover:text-white border border-yellow-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
-                                ✏️ Edit
-                              </button>
-                              <button type="button"
-                                onClick={() => handleDeleteVendor(v.id)}
-                                className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
-                                🗑️ Del
-                              </button>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-slate-800/60 rounded-lg p-3 text-center">
-                              <p className="text-xs text-green-400 font-bold mb-1">✅ Total Paid</p>
-                              <p className="text-xl font-black text-green-400">Rs {Number(v.total_paid || 0).toLocaleString()}</p>
-                              <p className="text-xs text-slate-500">De diya</p>
-                            </div>
-                            <div className={`rounded-lg p-3 text-center ${baaki > 0 ? 'bg-rose-900/20' : 'bg-green-900/20'}`}>
-                              <p className={`text-xs font-bold mb-1 ${baaki > 0 ? 'text-rose-400' : 'text-green-400'}`}>
-                                {baaki > 0 ? '🔴 Baaki' : '✅ Clear'}
-                              </p>
-                              <p className={`text-xl font-black ${baaki > 0 ? 'text-rose-400' : 'text-green-400'}`}>
-                                Rs {Math.abs(baaki).toLocaleString()}
-                              </p>
-                              <p className="text-xs text-slate-500">{baaki > 0 ? 'Dena hai' : 'Pura ho gaya'}</p>
-                            </div>
-                          </div>
-                          {/* Progress bar */}
-                          {Number(v.total_due || 0) > 0 && (
-                            <div className="mt-3">
-                              <div className="flex justify-between text-xs text-slate-400 mb-1">
-                                <span>Payment Progress</span>
-                                <span>{Math.min(100, Math.round((Number(v.total_paid || 0) / Number(v.total_due || 1)) * 100))}%</span>
-                              </div>
-                              <div className="w-full bg-slate-700 rounded-full h-2">
-                                <div
-                                  className="bg-green-500 h-2 rounded-full transition-all"
-                                  style={{ width: `${Math.min(100, (Number(v.total_paid || 0) / Number(v.total_due || 1)) * 100)}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        // EDIT MODE
-                        <form onSubmit={handleUpdateVendor} className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="col-span-2">
-                            <label className="text-xs text-slate-400 block mb-1">Vendor Name *</label>
-                            <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-rose-500"
-                              value={editVendorForm.name}
-                              onChange={(e) => setEditVendorForm({...editVendorForm, name: e.target.value})} required />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-xs text-green-400 font-bold block mb-1">✅ Total Paid (Kitna De Diya)</label>
-                            <input type="number" className="w-full bg-slate-800 border border-green-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
-                              value={editVendorForm.total_paid}
-                              onChange={(e) => setEditVendorForm({...editVendorForm, total_paid: e.target.value})} />
-                          </div>
-                          <div className="col-span-2">
-                            <label className="text-xs text-slate-400 block mb-1">Notes</label>
-                            <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm"
-                              value={editVendorForm.notes}
-                              onChange={(e) => setEditVendorForm({...editVendorForm, notes: e.target.value})} />
-                          </div>
-                          <div className="col-span-2 bg-slate-800/40 rounded-lg p-3 text-center">
-                            <p className="text-xs text-slate-400">Baaki Rahega:</p>
-                            <p className={`text-2xl font-black mt-1 ${(Number(editVendorForm.total_due||0) - Number(editVendorForm.total_paid||0)) > 0 ? 'text-rose-400' : 'text-green-400'}`}>
-                              Rs {Math.max(0, Number(editVendorForm.total_due||0) - Number(editVendorForm.total_paid||0)).toLocaleString()}
-                            </p>
-                          </div>
-                          <button type="submit" className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-lg transition-all">✅ Save</button>
-                          <button type="button" onClick={() => setEditVendorId(null)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 rounded-lg transition-all">Cancel</button>
-                        </form>
-                      )}
+                    <div className="mt-5">
+                      <div className="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>Payment Progress</span>
+                        <span className="font-bold text-white">{pct}%</span>
+                      </div>
+                      <div className="w-full bg-slate-700 rounded-full h-3">
+                        <div className="bg-green-500 h-3 rounded-full transition-all" style={{ width: `${pct}%` }}></div>
+                      </div>
                     </div>
                   );
-                })}
+                })()}
               </div>
-            )}
-          </div>
-        )}
+
+              {/* PAYMENT ENTRIES */}
+              <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 mb-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-bold text-slate-300">💳 Payment History</h3>
+                  <button type="button"
+                    onClick={() => setShowAddVendor(!showAddVendor)}
+                    className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg transition-all text-sm">
+                    {showAddVendor ? '✕ Cancel' : '➕ Payment Add Karo'}
+                  </button>
+                </div>
+
+                {/* ADD PAYMENT FORM */}
+                {showAddVendor && (
+                  <form onSubmit={handleAddVendor} className="bg-slate-800/50 rounded-xl p-4 mb-4 space-y-3">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Payment Note / Label *</label>
+                      <input
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
+                        placeholder="e.g. 1st installment, June payment..."
+                        value={vendorForm.name}
+                        onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-green-400 font-bold block mb-1">✅ Amount Paid (Rs)</label>
+                      <input type="number"
+                        className="w-full bg-slate-800 border border-green-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
+                        placeholder="e.g. 10000"
+                        value={vendorForm.total_paid}
+                        onChange={(e) => setVendorForm({...vendorForm, total_paid: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Notes (optional)</label>
+                      <input
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm"
+                        placeholder="Koi note..."
+                        value={vendorForm.notes}
+                        onChange={(e) => setVendorForm({...vendorForm, notes: e.target.value})}
+                      />
+                    </div>
+                    {vendorMsg && (
+                      <div className={`text-xs p-3 rounded-lg ${vendorMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
+                        {vendorMsg}
+                      </div>
+                    )}
+                    <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg transition-all">
+                      ✅ Payment Save Karo
+                    </button>
+                  </form>
+                )}
+
+                {/* PAYMENTS LIST */}
+                {vendors.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-3xl mb-2">💳</p>
+                    <p className="text-slate-400 text-sm">Abhi koi payment entry nahi</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {vendors.map((v) => {
+                      const isEditing = editVendorId === v.id;
+                      return (
+                        <div key={v.id} className="bg-slate-800/40 border border-slate-700 rounded-xl p-4">
+                          {!isEditing ? (
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-bold text-white">{v.name}</p>
+                                {v.notes && <p className="text-xs text-slate-400 mt-0.5">{v.notes}</p>}
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  {v.created_at ? new Date(v.created_at).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <p className="text-xl font-black text-green-400">Rs {Number(v.total_paid || 0).toLocaleString()}</p>
+                                <button type="button" onClick={() => handleEditVendor(v)}
+                                  className="text-yellow-400 hover:text-yellow-300 text-xs font-bold px-2 py-1 rounded hover:bg-yellow-900/20 transition-all">✏️</button>
+                                <button type="button" onClick={() => handleDeleteVendor(v.id)}
+                                  className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all">🗑️</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <form onSubmit={handleUpdateVendor} className="space-y-3">
+                              <div>
+                                <label className="text-xs text-slate-400 block mb-1">Payment Label *</label>
+                                <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-sm"
+                                  value={editVendorForm.name}
+                                  onChange={(e) => setEditVendorForm({...editVendorForm, name: e.target.value})} required />
+                              </div>
+                              <div>
+                                <label className="text-xs text-green-400 font-bold block mb-1">✅ Amount Paid</label>
+                                <input type="number" className="w-full bg-slate-800 border border-green-500/50 rounded-lg p-2.5 text-white text-sm"
+                                  value={editVendorForm.total_paid}
+                                  onChange={(e) => setEditVendorForm({...editVendorForm, total_paid: e.target.value})} />
+                              </div>
+                              <div>
+                                <label className="text-xs text-slate-400 block mb-1">Notes</label>
+                                <input className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-sm"
+                                  value={editVendorForm.notes}
+                                  onChange={(e) => setEditVendorForm({...editVendorForm, notes: e.target.value})} />
+                              </div>
+                              <div className="flex gap-2">
+                                <button type="submit" className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-all text-sm">✅ Save</button>
+                                <button type="button" onClick={() => setEditVendorId(null)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg transition-all text-sm">Cancel</button>
+                              </div>
+                            </form>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+
 
       </div>
 
