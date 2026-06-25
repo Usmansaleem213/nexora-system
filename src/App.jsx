@@ -11,7 +11,8 @@ export default function App({ isAdmin = true, currentUserId = null }) {
   const [formData, setFormData] = useState({
     sender_name: '', sender_address: '', sender_phone: '', sender_email: '',
     receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '',
-    destination: '', weight: '', service: ''
+    destination: '', weight: '', service: '',
+    shipment_date: new Date().toISOString().split('T')[0]
   });
   const [ledgerData, setLedgerData] = useState([]);
   const [pendingData, setPendingData] = useState([]);
@@ -247,6 +248,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
     const { error } = await supabase.from('customer_ledgers').insert([{
       nexora_airwaybill: nexoraTracking, receiver: formData.receiver_name, destination: formData.destination,
       weight: formData.weight, service: formData.service, sender_name: formData.sender_name,
+      created_at: new Date(formData.shipment_date + 'T' + new Date().toTimeString().split(' ')[0]).toISOString(),
       sender_address: formData.sender_address, sender_phone: formData.sender_phone, sender_email: formData.sender_email,
       receiver_address: formData.receiver_address, receiver_phone: formData.receiver_phone, receiver_email: formData.receiver_email,
       remote_status: 'Non-Remote', debit: 0, credit: 0, petrol: 0, remote_charges: 0,
@@ -256,7 +258,7 @@ export default function App({ isAdmin = true, currentUserId = null }) {
       setReturnTab('new_shipment');
       setLabelData({ ...formData, nexoraTracking });
       fetchLedger();
-      setFormData({ sender_name: '', sender_address: '', sender_phone: '', sender_email: '', receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '', destination: '', weight: '', service: '' });
+      setFormData({ sender_name: '', sender_address: '', sender_phone: '', sender_email: '', receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '', destination: '', weight: '', service: '', shipment_date: new Date().toISOString().split('T')[0] });
     } else { alert("Error: " + error.message); }
   };
 
@@ -690,6 +692,10 @@ export default function App({ isAdmin = true, currentUserId = null }) {
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Receiver Email" value={formData.receiver_email} onChange={(e) => setFormData({...formData, receiver_email: e.target.value})} />
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Destination" value={formData.destination} onChange={(e) => setFormData({...formData, destination: e.target.value})} />
                   <input className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white" placeholder="Weight (kg)" value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} />
+                  <div className="col-span-2">
+  <label className="text-xs text-slate-400 mb-1 block">Shipment Date (default: aaj, change kar sakte ho purani date ke liye)</label>
+  <input type="date" className="bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-white w-full" value={formData.shipment_date} onChange={(e) => setFormData({...formData, shipment_date: e.target.value})} />
+</div>
                   <select className="col-span-2 bg-slate-800 p-2.5 rounded border border-slate-700 focus:outline-none focus:border-blue-500 text-sm text-slate-300" value={formData.service} onChange={(e) => setFormData({...formData, service: e.target.value})} required>
                     <option value="">Select Service</option>
                     <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
