@@ -92,7 +92,7 @@ export default function AuthWrapper() {
 
   if (loading) return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="text-blue-400 text-xl font-bold animate-pulse">NEXORA Loading...</div>
+      <div className="text-blue-400 text-xl font-bold animate-pulse">Nexora Loading...</div>
     </div>
   );
 
@@ -182,7 +182,7 @@ export default function AuthWrapper() {
     </div>
   );
 
-  // STAFF PORTAL — same as admin but isAdmin=false
+  // STAFF PORTAL
   if (userRole === 'staff') return (
     <div className="relative pb-10">
       <div className="fixed top-4 right-4 z-50 flex items-center gap-3 bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg shadow-lg">
