@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
+// Helper: today's date in YYYY-MM-DD for date input default
+const todayStr = () => new Date().toISOString().split('T')[0];
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
