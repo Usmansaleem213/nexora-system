@@ -39,7 +39,7 @@ export default function App() {
 
   // VENDOR STATES
   const [vendors, setVendors] = useState([]);
-  const [vendorForm, setVendorForm] = useState({ name: '', total_due: 0, total_paid: 0, notes: '' });
+  const [vendorForm, setVendorForm] = useState({ name: '', total_due: 0, total_paid: 0, notes: '', payment_date: todayStr() });
   const [vendorMsg, setVendorMsg] = useState('');
   const [editVendorId, setEditVendorId] = useState(null);
   const [editVendorForm, setEditVendorForm] = useState({ name: '', total_due: 0, total_paid: 0, notes: '' });
@@ -83,11 +83,12 @@ export default function App() {
       name: vendorForm.name,
       total_due: Number(vendorForm.total_due),
       total_paid: Number(vendorForm.total_paid),
-      notes: vendorForm.notes
+      notes: vendorForm.notes,
+      created_at: vendorForm.payment_date ? new Date(vendorForm.payment_date + 'T12:00:00').toISOString() : new Date().toISOString()
     }]);
     if (!error) {
-      setVendorMsg('✅ Vendor add ho gaya!');
-      setVendorForm({ name: '', total_due: 0, total_paid: 0, notes: '' });
+      setVendorMsg('✅ Payment add ho gayi!');
+      setVendorForm({ name: '', total_due: 0, total_paid: 0, notes: '', payment_date: todayStr() });
       setShowAddVendor(false);
       fetchVendors();
       setTimeout(() => setVendorMsg(''), 3000);
@@ -1029,6 +1030,15 @@ export default function App() {
                         placeholder="e.g. 10000"
                         value={vendorForm.total_paid}
                         onChange={(e) => setVendorForm({...vendorForm, total_paid: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-blue-400 font-bold block mb-1">📅 Payment Date</label>
+                      <input type="date"
+                        className="w-full bg-slate-800 border border-blue-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                        value={vendorForm.payment_date}
+                        onChange={(e) => setVendorForm({...vendorForm, payment_date: e.target.value})}
                         required
                       />
                     </div>
