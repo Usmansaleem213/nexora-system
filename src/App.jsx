@@ -378,143 +378,174 @@ export default function App() {
   const metrics = getDashboardMetrics();
 
   return (
-    <div className="flex min-h-screen bg-black text-white font-sans">
+    <div className="flex min-h-screen font-sans" style={{background: 'linear-gradient(135deg, #0a0010 0%, #0d0018 50%, #080010 100%)'}}>
 
-      {/* SIDEBAR */}
-      <div className="w-64 bg-purple-950/90 border-r border-purple-800/40 flex flex-col justify-between fixed h-full">
+      {/* ═══ PREMIUM SIDEBAR ═══ */}
+      <div className="w-64 flex flex-col justify-between fixed h-full" style={{background: 'linear-gradient(180deg, #0f0020 0%, #0a0018 100%)', borderRight: '1px solid rgba(139,92,246,0.15)'}}>
+        {/* Logo */}
         <div>
-          <div className="p-6 border-b border-purple-800/40">
-            <h1 className="text-xl font-black tracking-wider text-purple-500">NEXORA ERP</h1>
-            <p className="text-xs text-purple-300 mt-1">Global Logistics Control</p>
+          <div className="p-6 mb-2" style={{borderBottom: '1px solid rgba(139,92,246,0.12)'}}>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background: 'linear-gradient(135deg, #7c3aed, #a855f7)'}}>
+                <span className="text-white text-xs font-black">N</span>
+              </div>
+              <h1 className="text-lg font-black tracking-widest" style={{background: 'linear-gradient(90deg, #c084fc, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>NEXORA ERP</h1>
+            </div>
+            <p className="text-xs ml-10" style={{color: 'rgba(167,139,250,0.5)'}}>Global Logistics Control</p>
           </div>
-          <nav className="p-4 space-y-2">
-            <button type="button" onClick={() => { setActiveTab('dashboard'); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'dashboard' ? 'bg-purple-600 text-white shadow-purple-900/50 shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
-              <span>📊</span> Dashboard
-            </button>
-            <button type="button" onClick={() => { setActiveTab('pending'); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'pending' ? 'bg-orange-600 text-white shadow-purple-900/50 shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
-              <span>🔔</span> Pending Requests
-              {pendingData.length > 0 && <span className="ml-auto bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{pendingData.length}</span>}
-            </button>
-            <button type="button" onClick={() => { setActiveTab('new_shipment'); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'new_shipment' ? 'bg-purple-600 text-white shadow-purple-900/50 shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
-              <span>📦</span> New Shipment
-            </button>
-            <button type="button" onClick={() => { setActiveTab('history'); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'history' ? 'bg-purple-600 text-white shadow-purple-900/50 shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
-              <span>📑</span> Shipment History
-            </button>
-            <button type="button" onClick={() => { setActiveTab('customers'); setSelectedCustomer(null); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'customers' ? 'bg-purple-600 text-white shadow-purple-900/50 shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
-              <span>👥</span> Customers / Ledgers
-            </button>
-            <button type="button" onClick={() => { setActiveTab('tracking_control'); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'tracking_control' ? 'bg-purple-600 text-white shadow-purple-900/50 shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
-              <span>🗺️</span> Tracking Control
-            </button>
-            <button type="button" onClick={() => { setActiveTab('vendors'); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'vendors' ? 'bg-rose-600 text-white shadow-purple-900/50 shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
-              <span>🏢</span> Vendors
-            </button>
-            <button type="button" onClick={() => { setActiveTab('registered'); setLabelData(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === 'registered' ? 'bg-purple-600 text-white shadow-purple-900/50 shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
-              <span>🆕</span> Registered Users
-              {profilesData.length > 0 && <span className="ml-auto bg-purple-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{profilesData.length}</span>}
-            </button>
+
+          <nav className="px-3 py-2 space-y-1">
+            {[
+              { id: 'dashboard', icon: '▦', label: 'Dashboard', color: 'purple' },
+              { id: 'pending', icon: '◉', label: 'Pending Requests', badge: pendingData.length, color: 'orange' },
+              { id: 'new_shipment', icon: '⊕', label: 'New Shipment', color: 'purple' },
+              { id: 'history', icon: '≡', label: 'Shipment History', color: 'purple' },
+              { id: 'customers', icon: '◈', label: 'Customers / Ledgers', color: 'purple' },
+              { id: 'tracking_control', icon: '◎', label: 'Tracking Control', color: 'purple' },
+              { id: 'vendors', icon: '◆', label: 'Vendors', color: 'rose' },
+              { id: 'registered', icon: '⊞', label: 'Registered Users', badge: profilesData.length, color: 'purple' },
+            ].map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button key={tab.id} type="button"
+                  onClick={() => { setActiveTab(tab.id); setLabelData(null); if(tab.id==='customers') setSelectedCustomer(null); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm"
+                  style={isActive ? {
+                    background: tab.color === 'orange' ? 'linear-gradient(135deg, rgba(234,88,12,0.3), rgba(194,65,12,0.2))' :
+                                tab.color === 'rose' ? 'linear-gradient(135deg, rgba(225,29,72,0.3), rgba(190,18,60,0.2))' :
+                                'linear-gradient(135deg, rgba(124,58,237,0.4), rgba(109,40,217,0.3))',
+                    border: tab.color === 'orange' ? '1px solid rgba(234,88,12,0.4)' :
+                            tab.color === 'rose' ? '1px solid rgba(225,29,72,0.4)' :
+                            '1px solid rgba(139,92,246,0.4)',
+                    color: '#fff',
+                    boxShadow: tab.color === 'purple' ? '0 0 20px rgba(124,58,237,0.2)' : 'none'
+                  } : {
+                    background: 'transparent',
+                    border: '1px solid transparent',
+                    color: 'rgba(196,181,253,0.6)'
+                  }}>
+                  <span className="text-base" style={isActive ? {color: tab.color === 'orange' ? '#fb923c' : tab.color === 'rose' ? '#fb7185' : '#a78bfa'} : {}}>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                  {tab.badge > 0 && (
+                    <span className="ml-auto text-white text-xs font-black px-2 py-0.5 rounded-full"
+                      style={{background: tab.color === 'orange' ? '#ea580c' : '#7c3aed'}}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
         </div>
-        <div className="p-4 border-t border-purple-800/40 text-xs text-purple-400/70 text-center">v3.0 • Premium ERP Suite</div>
+
+        <div className="p-4 text-center" style={{borderTop: '1px solid rgba(139,92,246,0.1)'}}>
+          <p className="text-xs" style={{color: 'rgba(139,92,246,0.4)'}}>v3.0 • Premium ERP Suite</p>
+        </div>
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 pl-64 p-8">
+      <div className="flex-1 pl-64 p-8 text-white">
 
         {/* DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl font-black text-white mb-2">📊 Admin Dashboard</h2>
-            <p className="text-purple-300 mb-6">Nexora Courier & Logistics — Overview</p>
-            {/* ROW 1 — 3 cards */}
-            <div className="grid grid-cols-3 gap-4 mb-4">
-              <div className="bg-purple-950/90 border border-purple-500/20 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">Total Shipments</p>
-                <p className="text-3xl font-black text-purple-400 mt-2">{metrics.totalShipments}</p>
-                <p className="text-xs text-purple-400/70 mt-1">All time</p>
+            {/* Header */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-black text-white tracking-tight mb-1">Admin Dashboard</h2>
+              <p className="text-sm" style={{color:'rgba(167,139,250,0.6)'}}>Nexora Courier & Logistics — Real-time Overview</p>
+            </div>
+
+            {/* ROW 1 — 3 big cards */}
+            <div className="grid grid-cols-3 gap-5 mb-5">
+              {/* Total Shipments */}
+              <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a0035 0%, #0f001f 100%)', border:'1px solid rgba(139,92,246,0.25)'}}>
+                <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{background:'radial-gradient(circle, #a855f7, transparent)', transform:'translate(30%, -30%)'}}></div>
+                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(167,139,250,0.6)'}}>Total Shipments</p>
+                <p className="text-5xl font-black text-white mb-1">{metrics.totalShipments}</p>
+                <p className="text-xs" style={{color:'rgba(139,92,246,0.5)'}}>All time</p>
+                <div className="absolute bottom-4 right-5 text-4xl opacity-10">📦</div>
               </div>
-              <div className="bg-purple-950/90 border border-yellow-500/20 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">Total Revenue</p>
-                <p className="text-2xl font-black text-yellow-400 mt-2">Rs {metrics.totalRevenue.toLocaleString()}</p>
-                <p className="text-xs text-purple-400/70 mt-1">Gross billing</p>
+              {/* Total Revenue */}
+              <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a1200 0%, #0f0a00 100%)', border:'1px solid rgba(234,179,8,0.2)'}}>
+                <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{background:'radial-gradient(circle, #eab308, transparent)', transform:'translate(30%, -30%)'}}></div>
+                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(234,179,8,0.6)'}}>Total Revenue</p>
+                <p className="text-3xl font-black text-yellow-400 mb-1">Rs {metrics.totalRevenue.toLocaleString()}</p>
+                <p className="text-xs" style={{color:'rgba(234,179,8,0.4)'}}>Gross billing</p>
+                <div className="absolute bottom-4 right-5 text-4xl opacity-10">💰</div>
               </div>
-              <div className="bg-purple-950/90 border border-orange-500/20 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">💸 Total Buying Cost</p>
-                <p className="text-2xl font-black text-orange-400 mt-2">Rs {metrics.totalCost.toLocaleString()}</p>
-                <p className="text-xs text-purple-400/70 mt-1">Vendor ko diye gaye</p>
+              {/* Total Buying Cost */}
+              <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a0800 0%, #0f0500 100%)', border:'1px solid rgba(249,115,22,0.2)'}}>
+                <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{background:'radial-gradient(circle, #f97316, transparent)', transform:'translate(30%, -30%)'}}></div>
+                <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(249,115,22,0.6)'}}>Total Buying Cost</p>
+                <p className="text-3xl font-black text-orange-400 mb-1">Rs {metrics.totalCost.toLocaleString()}</p>
+                <p className="text-xs" style={{color:'rgba(249,115,22,0.4)'}}>Vendor ko diye gaye</p>
+                <div className="absolute bottom-4 right-5 text-4xl opacity-10">💸</div>
               </div>
             </div>
-            {/* ROW 2 — 5 cards */}
-            <div className="grid grid-cols-5 gap-4 mb-8">
-              <div className="bg-purple-950/90 border border-emerald-500/20 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">Net Profit</p>
-                <p className="text-2xl font-black text-emerald-400 mt-2">Rs {metrics.totalNetProfit.toLocaleString()}</p>
-                <p className="text-xs text-purple-400/70 mt-1">After buying cost</p>
+
+            {/* ROW 2 — 5 smaller cards */}
+            <div className="grid grid-cols-5 gap-4 mb-5">
+              <div className="rounded-2xl p-5" style={{background:'linear-gradient(135deg, #001a0f 0%, #000f08 100%)', border:'1px solid rgba(16,185,129,0.2)'}}>
+                <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{color:'rgba(16,185,129,0.6)'}}>Net Profit</p>
+                <p className="text-xl font-black text-emerald-400">Rs {metrics.totalNetProfit.toLocaleString()}</p>
+                <p className="text-xs mt-1" style={{color:'rgba(16,185,129,0.4)'}}>After cost</p>
               </div>
-              <div className="bg-purple-950/90 border border-purple-500/20 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">Total Weight</p>
-                <p className="text-2xl font-black text-purple-400 mt-2">{Number(metrics.totalWeight).toFixed(1)} KG</p>
-                <p className="text-xs text-purple-400/70 mt-1">All shipments</p>
+              <div className="rounded-2xl p-5" style={{background:'linear-gradient(135deg, #0f001a 0%, #080010 100%)', border:'1px solid rgba(168,85,247,0.2)'}}>
+                <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{color:'rgba(168,85,247,0.6)'}}>Total Weight</p>
+                <p className="text-xl font-black text-purple-400">{Number(metrics.totalWeight).toFixed(1)} KG</p>
+                <p className="text-xs mt-1" style={{color:'rgba(168,85,247,0.4)'}}>All shipments</p>
               </div>
-              <div className="bg-purple-950/90 border border-red-500/20 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">Outstanding</p>
-                <p className="text-2xl font-black text-red-400 mt-2">Rs {metrics.totalOutstanding.toLocaleString()}</p>
-                <p className="text-xs text-purple-400/70 mt-1">Unpaid balance</p>
+              <div className="rounded-2xl p-5" style={{background:'linear-gradient(135deg, #1a0000 0%, #0f0000 100%)', border:'1px solid rgba(239,68,68,0.2)'}}>
+                <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{color:'rgba(239,68,68,0.6)'}}>Outstanding</p>
+                <p className="text-xl font-black text-red-400">Rs {metrics.totalOutstanding.toLocaleString()}</p>
+                <p className="text-xs mt-1" style={{color:'rgba(239,68,68,0.4)'}}>Unpaid</p>
               </div>
-              <div className="bg-purple-950/90 border border-green-500/20 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">✅ Vendor Paid</p>
-                <p className="text-2xl font-black text-green-400 mt-2">Rs {metrics.totalVendorPaid.toLocaleString()}</p>
-                <p className="text-xs text-purple-400/70 mt-1">Vendor ko de diye</p>
+              <div className="rounded-2xl p-5" style={{background:'linear-gradient(135deg, #001a08 0%, #000f04 100%)', border:'1px solid rgba(34,197,94,0.2)'}}>
+                <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{color:'rgba(34,197,94,0.6)'}}>Vendor Paid</p>
+                <p className="text-xl font-black text-green-400">Rs {metrics.totalVendorPaid.toLocaleString()}</p>
+                <p className="text-xs mt-1" style={{color:'rgba(34,197,94,0.4)'}}>De diye</p>
               </div>
-              <div className="bg-purple-950/90 border border-rose-500/20 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">🔴 Vendor Baaki</p>
-                <p className="text-2xl font-black text-rose-400 mt-2">Rs {metrics.totalVendorBaaki.toLocaleString()}</p>
-                <p className="text-xs text-purple-400/70 mt-1">Vendor ko dene hain</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-purple-950/90 border border-purple-800/40 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">Pending Requests</p>
-                <p className="text-3xl font-black text-orange-400 mt-2">{pendingData.length}</p>
-                <p className="text-xs text-purple-400/70 mt-1">Awaiting approval</p>
-              </div>
-              <div className="bg-purple-950/90 border border-purple-800/40 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">Registered Users</p>
-                <p className="text-3xl font-black text-purple-400 mt-2">{profilesData.length}</p>
-                <p className="text-xs text-purple-400/70 mt-1">Total signups</p>
-              </div>
-              <div className="bg-purple-950/90 border border-purple-800/40 p-5 rounded-xl">
-                <p className="text-xs text-purple-300 font-medium">Active Customers</p>
-                <p className="text-3xl font-black text-green-400 mt-2">{getUniqueCustomers().length}</p>
-                <p className="text-xs text-purple-400/70 mt-1">With shipments</p>
+              <div className="rounded-2xl p-5" style={{background:'linear-gradient(135deg, #1a0010 0%, #0f0008 100%)', border:'1px solid rgba(251,113,133,0.2)'}}>
+                <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{color:'rgba(251,113,133,0.6)'}}>Vendor Baaki</p>
+                <p className="text-xl font-black text-rose-400">Rs {metrics.totalVendorBaaki.toLocaleString()}</p>
+                <p className="text-xs mt-1" style={{color:'rgba(251,113,133,0.4)'}}>Dene hain</p>
               </div>
             </div>
-            <div className="bg-purple-950/90 border border-purple-800/40 rounded-xl p-6">
-              <h3 className="font-bold text-purple-200 mb-4">🕐 Recent Shipments</h3>
+
+            {/* ROW 3 — 3 stat cards */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              {[
+                { label: 'Pending Requests', value: pendingData.length, color: '#f97316', bg: '#1a0800', border: 'rgba(249,115,22,0.2)' },
+                { label: 'Registered Users', value: profilesData.length, color: '#a78bfa', bg: '#0f001a', border: 'rgba(167,139,250,0.2)' },
+                { label: 'Active Customers', value: getUniqueCustomers().length, color: '#4ade80', bg: '#001a08', border: 'rgba(74,222,128,0.2)' },
+              ].map((card, i) => (
+                <div key={i} className="rounded-2xl p-5" style={{background:`linear-gradient(135deg, ${card.bg} 0%, #080010 100%)`, border:`1px solid ${card.border}`}}>
+                  <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{color:`${card.color}99`}}>{card.label}</p>
+                  <p className="text-4xl font-black" style={{color: card.color}}>{card.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Recent Shipments Table */}
+            <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(135deg, #0d0020 0%, #08001a 100%)', border:'1px solid rgba(139,92,246,0.15)'}}>
+              <div className="px-6 py-4" style={{borderBottom:'1px solid rgba(139,92,246,0.1)'}}>
+                <h3 className="font-bold text-white text-sm tracking-wide">Recent Shipments</h3>
+              </div>
               <table className="w-full text-sm text-left">
                 <thead>
-                  <tr className="text-purple-300 border-b border-purple-700/50 text-xs uppercase">
-                    <th className="pb-3 px-2">AWB</th><th className="pb-3 px-2">Sender</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2 text-right">Amount</th>
+                  <tr className="text-xs uppercase" style={{borderBottom:'1px solid rgba(139,92,246,0.1)', color:'rgba(167,139,250,0.5)'}}>
+                    <th className="pb-3 pt-4 px-6">AWB</th><th className="pb-3 pt-4 px-4">Sender</th><th className="pb-3 pt-4 px-4">Receiver</th><th className="pb-3 pt-4 px-4">Destination</th><th className="pb-3 pt-4 px-4">Service</th><th className="pb-3 pt-4 px-4 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ledgerData.slice(0, 8).map(s => (
-                    <tr key={s.id} className="border-b border-purple-800/40 hover:bg-purple-900/60/30">
-                      <td className="py-3 px-2 font-mono text-purple-400 text-xs">{s.nexora_airwaybill}</td>
-                      <td className="py-3 px-2 text-purple-200">{s.sender_name || 'N/A'}</td>
-                      <td className="py-3 px-2 text-white font-medium">{s.receiver}</td>
-                      <td className="py-3 px-2 text-purple-200">{s.destination}</td>
-                      <td className="py-3 px-2"><span className="bg-purple-900/60 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
-                      <td className="py-3 px-2 text-right font-mono text-yellow-400">Rs {Number(s.debit || 0).toLocaleString()}</td>
+                  {ledgerData.slice(0, 8).map((s, idx) => (
+                    <tr key={s.id} className="transition-all" style={{borderBottom:'1px solid rgba(139,92,246,0.06)'}}>
+                      <td className="py-3.5 px-6 font-mono text-xs" style={{color:'#a78bfa'}}>{s.nexora_airwaybill}</td>
+                      <td className="py-3.5 px-4" style={{color:'rgba(255,255,255,0.6)'}}>{s.sender_name || 'N/A'}</td>
+                      <td className="py-3.5 px-4 text-white font-medium">{s.receiver}</td>
+                      <td className="py-3.5 px-4" style={{color:'rgba(255,255,255,0.6)'}}>{s.destination}</td>
+                      <td className="py-3.5 px-4"><span className="px-2 py-1 rounded-lg text-xs font-bold" style={{background:'rgba(139,92,246,0.15)', color:'#c084fc', border:'1px solid rgba(139,92,246,0.2)'}}>{s.service}</span></td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-yellow-400">Rs {Number(s.debit || 0).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
