@@ -221,7 +221,8 @@ export default function App() {
     const totalWeight = ledgerData.reduce((sum, item) => sum + Number(item.weight || 0), 0);
     const totalOutstanding = ledgerData.reduce((sum, item) =>
       sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0) - Number(item.credit || 0), 0);
-    const totalVendorPaid = ledgerData.reduce((sum, item) => sum + Number(item.vendor_paid || 0), 0);
+    // Vendor paid/baaki from vendors table
+    const totalVendorPaid = vendors.reduce((sum, v) => sum + Number(v.total_paid || 0), 0);
     const totalVendorBaaki = totalCost - totalVendorPaid;
     return { totalShipments, totalRevenue, totalNetProfit, totalWeight, totalOutstanding, totalCost, totalVendorPaid, totalVendorBaaki };
   };
