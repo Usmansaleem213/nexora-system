@@ -78,14 +78,14 @@ export default function CustomerPortal({ session, onLogout }) {
   const totalOutstanding = totalSpending - totalPaid;
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-white font-sans">
+    <div className="flex min-h-screen bg-black text-white font-sans">
 
       {/* SIDEBAR */}
-      <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between fixed h-full">
+      <div className="w-64 bg-purple-950/90 border-r border-purple-800/40 flex flex-col justify-between fixed h-full">
         <div>
-          <div className="p-6 border-b border-slate-800">
-            <h1 className="text-xl font-black tracking-wider text-blue-500">NEXORA</h1>
-            <p className="text-xs text-slate-400 mt-1">Customer Portal</p>
+          <div className="p-6 border-b border-purple-800/40">
+            <h1 className="text-xl font-black tracking-wider text-purple-500">NEXORA</h1>
+            <p className="text-xs text-purple-300 mt-1">Customer Portal</p>
           </div>
           <nav className="p-4 space-y-2">
             {[
@@ -97,14 +97,14 @@ export default function CustomerPortal({ session, onLogout }) {
             ].map(tab => (
               <button key={tab.id} type="button"
                 onClick={() => { setActiveTab(tab.id); if (tab.id !== 'new_shipment') setGeneratedLabel(null); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === tab.id ? 'bg-purple-600 text-white shadow-lg' : 'text-purple-300 hover:bg-purple-900/60 hover:text-white'}`}>
                 <span>{tab.icon}</span> {tab.label}
               </button>
             ))}
           </nav>
         </div>
-        <div className="p-4 border-t border-slate-800">
-          <p className="text-xs text-slate-400 mb-1 truncate">{customerEmail}</p>
+        <div className="p-4 border-t border-purple-800/40">
+          <p className="text-xs text-purple-300 mb-1 truncate">{customerEmail}</p>
           <button type="button" onClick={onLogout}
             className="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 py-2 rounded-lg text-sm font-bold transition-all">
             Logout
@@ -119,30 +119,30 @@ export default function CustomerPortal({ session, onLogout }) {
         {activeTab === 'dashboard' && (
           <div>
             <h2 className="text-2xl font-black text-white mb-2">Welcome, {customerName}! 👋</h2>
-            <p className="text-slate-400 mb-6">Here's your shipment overview</p>
+            <p className="text-purple-300 mb-6">Here's your shipment overview</p>
             <div className="grid grid-cols-4 gap-4 mb-8">
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-                <p className="text-xs text-slate-400">Total Shipments</p>
-                <p className="text-3xl font-black text-blue-400 mt-1">{shipments.length}</p>
+              <div className="bg-purple-950/90 border border-purple-800/40 p-5 rounded-xl">
+                <p className="text-xs text-purple-300">Total Shipments</p>
+                <p className="text-3xl font-black text-purple-400 mt-1">{shipments.length}</p>
               </div>
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-                <p className="text-xs text-slate-400">Total Spending</p>
+              <div className="bg-purple-950/90 border border-purple-800/40 p-5 rounded-xl">
+                <p className="text-xs text-purple-300">Total Spending</p>
                 <p className="text-3xl font-black text-yellow-400 mt-1">Rs {totalSpending.toLocaleString()}</p>
               </div>
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-                <p className="text-xs text-slate-400">Amount Paid</p>
+              <div className="bg-purple-950/90 border border-purple-800/40 p-5 rounded-xl">
+                <p className="text-xs text-purple-300">Amount Paid</p>
                 <p className="text-3xl font-black text-green-400 mt-1">Rs {totalPaid.toLocaleString()}</p>
               </div>
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-                <p className="text-xs text-slate-400">Outstanding</p>
+              <div className="bg-purple-950/90 border border-purple-800/40 p-5 rounded-xl">
+                <p className="text-xs text-purple-300">Outstanding</p>
                 <p className="text-3xl font-black text-red-400 mt-1">Rs {totalOutstanding.toLocaleString()}</p>
               </div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h3 className="font-bold text-slate-300 mb-4">Recent Shipments</h3>
+            <div className="bg-purple-950/90 border border-purple-800/40 rounded-xl p-6">
+              <h3 className="font-bold text-purple-200 mb-4">Recent Shipments</h3>
               <table className="w-full text-sm text-left">
                 <thead>
-                  <tr className="text-slate-400 border-b border-slate-700 text-xs uppercase">
+                  <tr className="text-purple-300 border-b border-purple-700/50 text-xs uppercase">
                     <th className="pb-3 px-2">AWB</th>
                     <th className="pb-3 px-2">Receiver</th>
                     <th className="pb-3 px-2">Destination</th>
@@ -152,11 +152,11 @@ export default function CustomerPortal({ session, onLogout }) {
                 </thead>
                 <tbody>
                   {shipments.slice(0, 5).map(s => (
-                    <tr key={s.id} className="border-b border-slate-800 hover:bg-slate-800/30">
-                      <td className="py-3 px-2 font-mono text-blue-400 text-xs">{s.nexora_airwaybill}</td>
+                    <tr key={s.id} className="border-b border-purple-800/40 hover:bg-purple-900/60/30">
+                      <td className="py-3 px-2 font-mono text-purple-400 text-xs">{s.nexora_airwaybill}</td>
                       <td className="py-3 px-2 text-white">{s.receiver}</td>
-                      <td className="py-3 px-2 text-slate-300">{s.destination}</td>
-                      <td className="py-3 px-2"><span className="bg-slate-800 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
+                      <td className="py-3 px-2 text-purple-200">{s.destination}</td>
+                      <td className="py-3 px-2"><span className="bg-purple-900/60 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
                       <td className="py-3 px-2 text-right font-mono text-yellow-400">Rs {Number(s.debit || 0).toLocaleString()}</td>
                     </tr>
                   ))}
@@ -172,49 +172,49 @@ export default function CustomerPortal({ session, onLogout }) {
             {!generatedLabel ? (
               <>
                 <h2 className="text-2xl font-black text-white mb-2">New Shipment Request 📦</h2>
-                <p className="text-slate-400 mb-6">Fill in the details — label will be generated instantly!</p>
-                <div className="bg-slate-900 border border-slate-700 rounded-xl p-8">
+                <p className="text-purple-300 mb-6">Fill in the details — label will be generated instantly!</p>
+                <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-8">
                   <form onSubmit={handleNewShipment} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs text-slate-400">Receiver Name *</label>
-                        <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                        <label className="text-xs text-purple-300">Receiver Name *</label>
+                        <input className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
                           placeholder="John Doe" value={formData.receiver_name}
                           onChange={(e) => setFormData({...formData, receiver_name: e.target.value})} required />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400">Receiver Phone *</label>
-                        <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                        <label className="text-xs text-purple-300">Receiver Phone *</label>
+                        <input className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
                           placeholder="+1 234 567 8900" value={formData.receiver_phone}
                           onChange={(e) => setFormData({...formData, receiver_phone: e.target.value})} required />
                       </div>
                       <div className="col-span-2">
-                        <label className="text-xs text-slate-400">Receiver Address *</label>
-                        <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                        <label className="text-xs text-purple-300">Receiver Address *</label>
+                        <input className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
                           placeholder="123 Street, City, Country" value={formData.receiver_address}
                           onChange={(e) => setFormData({...formData, receiver_address: e.target.value})} required />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400">Receiver Email</label>
-                        <input type="email" className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                        <label className="text-xs text-purple-300">Receiver Email</label>
+                        <input type="email" className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
                           placeholder="receiver@email.com" value={formData.receiver_email}
                           onChange={(e) => setFormData({...formData, receiver_email: e.target.value})} />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400">Destination Country *</label>
-                        <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                        <label className="text-xs text-purple-300">Destination Country *</label>
+                        <input className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
                           placeholder="United Kingdom" value={formData.destination}
                           onChange={(e) => setFormData({...formData, destination: e.target.value})} required />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400">Weight (kg) *</label>
-                        <input type="number" className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                        <label className="text-xs text-purple-300">Weight (kg) *</label>
+                        <input type="number" className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
                           placeholder="2.5" value={formData.weight}
                           onChange={(e) => setFormData({...formData, weight: e.target.value})} required />
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400">Preferred Service *</label>
-                        <select className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+                        <label className="text-xs text-purple-300">Preferred Service *</label>
+                        <select className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
                           value={formData.service} onChange={(e) => setFormData({...formData, service: e.target.value})} required>
                           <option value="">Select Service</option>
                           <option value="DHL">DHL</option>
@@ -228,7 +228,7 @@ export default function CustomerPortal({ session, onLogout }) {
                       </div>
                     </div>
                     <button type="submit" disabled={submitting}
-                      className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-all text-sm uppercase tracking-wider">
+                      className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-all text-sm uppercase tracking-wider">
                       {submitting ? 'Generating...' : '📦 Submit & Generate Label'}
                     </button>
                   </form>
@@ -237,7 +237,7 @@ export default function CustomerPortal({ session, onLogout }) {
             ) : (
               <div>
                 <h2 className="text-2xl font-black text-white mb-2">✅ Shipment Booked!</h2>
-                <p className="text-slate-400 mb-6">Your label is ready — save or print it</p>
+                <p className="text-purple-300 mb-6">Your label is ready — save or print it</p>
                 <div ref={labelRef} className="bg-white text-black p-8 rounded-xl border-4 border-black shadow-2xl max-w-md mx-auto mb-6">
                   <div className="border-b-2 border-black pb-3 mb-4">
                     <h1 className="text-2xl font-black tracking-widest">NEXORA LOGISTICS</h1>
@@ -287,7 +287,7 @@ export default function CustomerPortal({ session, onLogout }) {
                     🖨️ Print Label
                   </button>
                   <button type="button" onClick={() => setGeneratedLabel(null)}
-                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-all text-sm">
+                    className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-all text-sm">
                     ➕ New Shipment
                   </button>
                 </div>
@@ -302,7 +302,7 @@ export default function CustomerPortal({ session, onLogout }) {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-2xl font-black text-white">My Shipments & Ledger 📑</h2>
-                <p className="text-slate-400 text-sm mt-1">Complete history of all your parcels</p>
+                <p className="text-purple-300 text-sm mt-1">Complete history of all your parcels</p>
               </div>
               <button type="button"
                 onClick={() => {
@@ -318,10 +318,10 @@ export default function CustomerPortal({ session, onLogout }) {
                 📥 Download CSV
               </button>
             </div>
-            <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 overflow-x-auto">
+            <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 overflow-x-auto">
               <table className="w-full text-sm text-left min-w-[800px]">
                 <thead>
-                  <tr className="text-slate-400 border-b border-slate-700 text-xs uppercase">
+                  <tr className="text-purple-300 border-b border-purple-700/50 text-xs uppercase">
                     <th className="pb-3 px-2">S.No</th>
                     <th className="pb-3 px-2">Date</th>
                     <th className="pb-3 px-2">AWB</th>
@@ -335,17 +335,17 @@ export default function CustomerPortal({ session, onLogout }) {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={9} className="text-center py-8 text-slate-400">Loading...</td></tr>
+                    <tr><td colSpan={9} className="text-center py-8 text-purple-300">Loading...</td></tr>
                   ) : shipments.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center py-8 text-slate-400">No shipments yet</td></tr>
+                    <tr><td colSpan={9} className="text-center py-8 text-purple-300">No shipments yet</td></tr>
                   ) : shipments.map((s, idx) => (
-                    <tr key={s.id} className="border-b border-slate-800 hover:bg-slate-800/30">
-                      <td className="py-3 px-2 text-slate-500">{shipments.length - idx}</td>
-                      <td className="py-3 px-2 text-slate-400 text-xs">{s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A'}</td>
-                      <td className="py-3 px-2 font-mono text-blue-400 text-xs">{s.nexora_airwaybill}</td>
+                    <tr key={s.id} className="border-b border-purple-800/40 hover:bg-purple-900/60/30">
+                      <td className="py-3 px-2 text-purple-400/70">{shipments.length - idx}</td>
+                      <td className="py-3 px-2 text-purple-300 text-xs">{s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A'}</td>
+                      <td className="py-3 px-2 font-mono text-purple-400 text-xs">{s.nexora_airwaybill}</td>
                       <td className="py-3 px-2 text-white font-medium">{s.receiver}</td>
-                      <td className="py-3 px-2 text-slate-300">{s.destination}</td>
-                      <td className="py-3 px-2"><span className="bg-slate-800 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
+                      <td className="py-3 px-2 text-purple-200">{s.destination}</td>
+                      <td className="py-3 px-2"><span className="bg-purple-900/60 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
                       <td className="py-3 px-2 text-right font-mono text-yellow-400">Rs {Number(s.debit || 0).toLocaleString()}</td>
                       <td className="py-3 px-2 text-right font-mono text-green-400">Rs {Number(s.credit || 0).toLocaleString()}</td>
                       <td className="py-3 px-2">
@@ -365,7 +365,7 @@ export default function CustomerPortal({ session, onLogout }) {
         {activeTab === 'tracking' && (
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">Track Your Parcel 🔍</h2>
-            <p className="text-slate-400 mb-6">Enter your Nexora AWB number to see live tracking</p>
+            <p className="text-purple-300 mb-6">Enter your Nexora AWB number to see live tracking</p>
             <TrackingSection shipments={shipments} />
           </div>
         )}
@@ -374,27 +374,27 @@ export default function CustomerPortal({ session, onLogout }) {
         {activeTab === 'profile' && (
           <div className="max-w-lg mx-auto">
             <h2 className="text-2xl font-black text-white mb-6">My Profile 👤</h2>
-            <div className="bg-slate-900 border border-slate-700 rounded-xl p-8 space-y-4">
+            <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-8 space-y-4">
               <div className="flex items-center justify-center mb-4">
-                <div className="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center text-3xl font-black">
+                <div className="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center text-3xl font-black">
                   {customerName.charAt(0).toUpperCase()}
                 </div>
               </div>
               <div>
-                <label className="text-xs text-slate-400">Full Name</label>
-                <p className="text-white font-bold mt-1 bg-slate-800 p-3 rounded-lg">{customerName}</p>
+                <label className="text-xs text-purple-300">Full Name</label>
+                <p className="text-white font-bold mt-1 bg-purple-900/60 p-3 rounded-lg">{customerName}</p>
               </div>
               <div>
-                <label className="text-xs text-slate-400">Email Address</label>
-                <p className="text-white font-bold mt-1 bg-slate-800 p-3 rounded-lg">{customerEmail}</p>
+                <label className="text-xs text-purple-300">Email Address</label>
+                <p className="text-white font-bold mt-1 bg-purple-900/60 p-3 rounded-lg">{customerEmail}</p>
               </div>
               <div>
-                <label className="text-xs text-slate-400">Account Type</label>
-                <p className="text-blue-400 font-bold mt-1 bg-slate-800 p-3 rounded-lg">Customer</p>
+                <label className="text-xs text-purple-300">Account Type</label>
+                <p className="text-purple-400 font-bold mt-1 bg-purple-900/60 p-3 rounded-lg">Customer</p>
               </div>
               <div>
-                <label className="text-xs text-slate-400">Total Shipments</label>
-                <p className="text-white font-bold mt-1 bg-slate-800 p-3 rounded-lg">{shipments.length} Parcels</p>
+                <label className="text-xs text-purple-300">Total Shipments</label>
+                <p className="text-white font-bold mt-1 bg-purple-900/60 p-3 rounded-lg">{shipments.length} Parcels</p>
               </div>
             </div>
           </div>
@@ -415,7 +415,7 @@ function TrackingSection({ shipments }) {
 
   // All possible statuses with their styles
   const statusStyleMap = {
-    'Shipment Booked':        { color: 'bg-blue-900/40 text-blue-400 border-blue-500/30',       dot: 'bg-blue-500',    icon: '📋' },
+    'Shipment Booked':        { color: 'bg-blue-900/40 text-purple-400 border-purple-500/30',       dot: 'bg-purple-500',    icon: '📋' },
     'Picked Up':              { color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/30',       dot: 'bg-cyan-500',    icon: '🛵' },
     'Arrived at Origin Hub':  { color: 'bg-indigo-900/40 text-indigo-400 border-indigo-500/30', dot: 'bg-indigo-500',  icon: '🏭' },
     'Departed Origin':        { color: 'bg-violet-900/40 text-violet-400 border-violet-500/30', dot: 'bg-violet-500',  icon: '✈️' },
@@ -429,12 +429,12 @@ function TrackingSection({ shipments }) {
     'Delivery Attempted':     { color: 'bg-amber-900/40 text-amber-400 border-amber-500/30',    dot: 'bg-amber-500',   icon: '🔔' },
     'Delivered':              { color: 'bg-green-900/40 text-green-400 border-green-500/30',    dot: 'bg-green-500',   icon: '📬' },
     'Delayed':                { color: 'bg-red-900/40 text-red-400 border-red-500/30',          dot: 'bg-red-500',     icon: '⚠️' },
-    'On Hold':                { color: 'bg-slate-700/60 text-slate-300 border-slate-500/30',    dot: 'bg-slate-400',   icon: '⏸️' },
+    'On Hold':                { color: 'bg-slate-700/60 text-purple-200 border-slate-500/30',    dot: 'bg-slate-400',   icon: '⏸️' },
     'Exception':              { color: 'bg-red-900/60 text-red-300 border-red-400/40',          dot: 'bg-red-600',     icon: '🚨' },
   };
 
   const getStyle = (status) =>
-    statusStyleMap[status] || { color: 'bg-slate-800 text-slate-400 border-slate-600', dot: 'bg-slate-500', icon: '📍' };
+    statusStyleMap[status] || { color: 'bg-purple-900/60 text-purple-300 border-slate-600', dot: 'bg-slate-500', icon: '📍' };
 
   const handleTrack = async (e) => {
     e.preventDefault();
@@ -484,13 +484,13 @@ function TrackingSection({ shipments }) {
       {/* Search Box */}
       <form onSubmit={handleTrack} className="flex gap-3 mb-6">
         <input
-          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-blue-500"
+          className="flex-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
           placeholder="Enter Nexora AWB e.g. NX-123456789"
           value={trackingNo}
           onChange={(e) => setTrackingNo(e.target.value)}
           required
         />
-        <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 rounded-lg transition-all">
+        <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 rounded-lg transition-all">
           🔍 Track
         </button>
       </form>
@@ -505,11 +505,11 @@ function TrackingSection({ shipments }) {
         <div className="space-y-4">
 
           {/* Shipment Summary Card */}
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+          <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-xs text-slate-400 mb-1">Nexora AWB</p>
-                <p className="text-xl font-black font-mono text-blue-400">{result.nexora_airwaybill}</p>
+                <p className="text-xs text-purple-300 mb-1">Nexora AWB</p>
+                <p className="text-xl font-black font-mono text-purple-400">{result.nexora_airwaybill}</p>
               </div>
               {latestStatus ? (
                 <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${latestStyle.color}`}>
@@ -522,13 +522,13 @@ function TrackingSection({ shipments }) {
               )}
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><p className="text-xs text-slate-400">Receiver</p><p className="text-white font-medium">{result.receiver}</p></div>
-              <div><p className="text-xs text-slate-400">Destination</p><p className="text-white font-medium">{result.destination}</p></div>
-              <div><p className="text-xs text-slate-400">Service</p><p className="text-blue-400 font-bold">{result.service}</p></div>
-              <div><p className="text-xs text-slate-400">Weight</p><p className="text-white font-medium">{result.weight} KG</p></div>
+              <div><p className="text-xs text-purple-300">Receiver</p><p className="text-white font-medium">{result.receiver}</p></div>
+              <div><p className="text-xs text-purple-300">Destination</p><p className="text-white font-medium">{result.destination}</p></div>
+              <div><p className="text-xs text-purple-300">Service</p><p className="text-purple-400 font-bold">{result.service}</p></div>
+              <div><p className="text-xs text-purple-300">Weight</p><p className="text-white font-medium">{result.weight} KG</p></div>
               {result.forwarding_awb && (
                 <div className="col-span-2">
-                  <p className="text-xs text-slate-400">Carrier AWB</p>
+                  <p className="text-xs text-purple-300">Carrier AWB</p>
                   <p className="text-emerald-400 font-mono font-bold">{result.forward_vendor}: {result.forwarding_awb}</p>
                 </div>
               )}
@@ -536,17 +536,17 @@ function TrackingSection({ shipments }) {
           </div>
 
           {/* Tracking Timeline */}
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+          <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6">
             <h3 className="font-bold text-slate-200 mb-5 flex items-center gap-2">
               📍 Tracking Timeline
-              {loadingUpdates && <span className="text-xs text-slate-500 font-normal">Loading...</span>}
+              {loadingUpdates && <span className="text-xs text-purple-400/70 font-normal">Loading...</span>}
             </h3>
 
             {!loadingUpdates && trackingUpdates.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-3xl mb-3">📦</p>
-                <p className="text-slate-400 text-sm font-medium">Shipment is being processed</p>
-                <p className="text-slate-500 text-xs mt-1">Tracking updates will appear here once your parcel is on the move</p>
+                <p className="text-purple-300 text-sm font-medium">Shipment is being processed</p>
+                <p className="text-purple-400/70 text-xs mt-1">Tracking updates will appear here once your parcel is on the move</p>
               </div>
             )}
 
@@ -573,8 +573,8 @@ function TrackingSection({ shipments }) {
                         <div className={`
                           flex-1 rounded-xl p-4 border transition-all
                           ${isLatest
-                            ? 'bg-slate-800/80 border-slate-500/60 shadow-md'
-                            : 'bg-slate-800/20 border-slate-700/30'
+                            ? 'bg-purple-900/60/80 border-slate-500/60 shadow-md'
+                            : 'bg-purple-900/60/20 border-purple-700/50/30'
                           }
                         `}>
                           <div className="flex items-start justify-between gap-2 mb-2">
@@ -584,26 +584,26 @@ function TrackingSection({ shipments }) {
                               {update.status}
                             </span>
                             {isLatest && (
-                              <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold tracking-wide flex-shrink-0">
+                              <span className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-bold tracking-wide flex-shrink-0">
                                 LATEST
                               </span>
                             )}
                           </div>
 
                           {/* Location */}
-                          <p className={`font-bold text-sm ${isLatest ? 'text-white' : 'text-slate-300'}`}>
+                          <p className={`font-bold text-sm ${isLatest ? 'text-white' : 'text-purple-200'}`}>
                             📍 {update.location}
                           </p>
 
                           {/* Description */}
                           {update.description && (
-                            <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+                            <p className="text-purple-300 text-xs mt-1 leading-relaxed">
                               {update.description}
                             </p>
                           )}
 
                           {/* Time */}
-                          <p className="text-slate-500 text-xs mt-2 flex items-center gap-1">
+                          <p className="text-purple-400/70 text-xs mt-2 flex items-center gap-1">
                             🕐 {new Date(update.created_at).toLocaleString('en-PK', {
                               weekday: 'short',
                               day: '2-digit',
@@ -620,9 +620,9 @@ function TrackingSection({ shipments }) {
 
                   {/* Origin point at bottom */}
                   <div className="flex gap-4 relative pl-9">
-                    <div className="absolute left-[8px] top-1 w-[15px] h-[15px] rounded-full border-2 border-slate-700 bg-slate-600 flex-shrink-0"></div>
+                    <div className="absolute left-[8px] top-1 w-[15px] h-[15px] rounded-full border-2 border-purple-700/50 bg-slate-600 flex-shrink-0"></div>
                     <div className="flex-1 pb-2">
-                      <p className="text-slate-500 text-xs font-medium">
+                      <p className="text-purple-400/70 text-xs font-medium">
                         📋 Shipment registered in Nexora system
                       </p>
                       {result.created_at && (
