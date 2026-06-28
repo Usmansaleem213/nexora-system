@@ -100,7 +100,7 @@ export default function AuthWrapper() {
     const { data: shipment } = await supabase
       .from('customer_ledgers')
       .select('*')
-      .eq('nexora_airwaybill', trackAwb.trim())
+      .eq('ut_airwaybill', trackAwb.trim())
       .single();
 
     if (!shipment) {
@@ -114,7 +114,7 @@ export default function AuthWrapper() {
     const { data: updates } = await supabase
       .from('tracking_updates')
       .select('*')
-      .eq('awb', shipment.nexora_airwaybill)
+      .eq('awb', shipment.ut_airwaybill)
       .order('date', { ascending: false });
 
     if (updates) setTrackUpdates(updates);
@@ -135,7 +135,7 @@ export default function AuthWrapper() {
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-purple-950/90 border-t border-purple-800/40 py-2 px-6 flex justify-center gap-6">
       <a href="tel:+923350961243" className="flex items-center gap-1 text-xs text-purple-300 hover:text-purple-400 transition-all">📞 +92 335 096 1243</a>
       <a href="https://wa.me/923350961243" target="_blank" className="flex items-center gap-1 text-xs text-purple-300 hover:text-green-400 transition-all">💬 WhatsApp</a>
-      <a href="mailto:nexora85@gmail.com" className="flex items-center gap-1 text-xs text-purple-300 hover:text-purple-400 transition-all">✉️ nexora85@gmail.com</a>
+      <a href="mailto:united.trade.internationalll@gmail.com" className="flex items-center gap-1 text-xs text-purple-300 hover:text-purple-400 transition-all">✉️ united.trade.internationalll@gmail.com</a>
       <span className="text-xs text-slate-600">📍 Karachi, Pakistan</span>
     </div>
   );
@@ -161,7 +161,7 @@ export default function AuthWrapper() {
           <div className="flex justify-center gap-4 mt-4">
             <a href="tel:+923350961243" className="flex items-center gap-1 text-xs text-purple-300 hover:text-purple-400 transition-all">📞 +92 335 096 1243</a>
             <a href="https://wa.me/923350961243" target="_blank" className="flex items-center gap-1 text-xs text-purple-300 hover:text-green-400 transition-all">💬 WhatsApp</a>
-            <a href="mailto:nexora85@gmail.com" className="flex items-center gap-1 text-xs text-purple-300 hover:text-purple-400 transition-all">✉️ nexora85@gmail.com</a>
+            <a href="mailto:united.trade.internationalll@gmail.com" className="flex items-center gap-1 text-xs text-purple-300 hover:text-purple-400 transition-all">✉️ united.trade.internationalll@gmail.com</a>
           </div>
           <p className="text-xs text-purple-400/70 mt-1">📍 Karachi, Pakistan</p>
         </div>
@@ -258,7 +258,7 @@ export default function AuthWrapper() {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <p className="text-xs text-purple-300">Tracking Number</p>
-                      <p className="text-lg font-black font-mono text-white">{trackResult.nexora_airwaybill}</p>
+                      <p className="text-lg font-black font-mono text-white">{trackResult.ut_airwaybill}</p>
                     </div>
                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-600/40 text-purple-200 border border-purple-500/40">
                       {trackResult.service}
