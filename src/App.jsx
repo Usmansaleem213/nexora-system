@@ -93,13 +93,13 @@ export default function App() {
       created_at: vendorForm.payment_date ? new Date(vendorForm.payment_date + 'T12:00:00').toISOString() : new Date().toISOString()
     }]);
     if (!error) {
-      setVendorMsg('✅ Payment add ho gayi!');
+      setVendorMsg('âœ… Payment add ho gayi!');
       setVendorForm({ name: '', total_due: 0, total_paid: 0, notes: '', payment_date: todayStr() });
       setShowAddVendor(false);
       fetchVendors();
       setTimeout(() => setVendorMsg(''), 3000);
     } else {
-      setVendorMsg('❌ Error: ' + error.message);
+      setVendorMsg('âŒ Error: ' + error.message);
     }
   };
 
@@ -134,24 +134,24 @@ export default function App() {
     fetchVendors();
   }, []);
 
-  // ─── TRACKING STATUS OPTIONS ───────────────────────────────────────────────
+  // â”€â”€â”€ TRACKING STATUS OPTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const trackingStatuses = [
-    { value: 'Shipment Booked',         label: '📋 Shipment Booked',           color: 'bg-blue-900/40 text-purple-400 border-purple-500/30',     dot: 'bg-purple-500' },
-    { value: 'Picked Up',               label: '🛵 Picked Up',                  color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/30',     dot: 'bg-cyan-500' },
-    { value: 'Arrived at Origin Hub',   label: '🏭 Arrived at Origin Hub',      color: 'bg-indigo-900/40 text-indigo-400 border-indigo-500/30', dot: 'bg-indigo-500' },
-    { value: 'Departed Origin',         label: '✈️ Departed Origin',            color: 'bg-violet-900/40 text-violet-400 border-violet-500/30', dot: 'bg-violet-500' },
-    { value: 'In Transit',              label: '🚚 In Transit',                  color: 'bg-yellow-900/40 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-500' },
-    { value: 'Arrived at Transit Hub',  label: '🔄 Arrived at Transit Hub',     color: 'bg-orange-900/40 text-orange-400 border-orange-500/30', dot: 'bg-orange-400' },
-    { value: 'Departed Transit Hub',    label: '🛫 Departed Transit Hub',       color: 'bg-pink-900/40 text-pink-400 border-pink-500/30',     dot: 'bg-pink-500' },
-    { value: 'Arrived at Destination',  label: '🛬 Arrived at Destination',     color: 'bg-teal-900/40 text-teal-400 border-teal-500/30',     dot: 'bg-teal-500' },
-    { value: 'Customs Clearance',       label: '🛃 Customs Clearance',          color: 'bg-purple-900/40 text-purple-400 border-purple-500/30', dot: 'bg-purple-500' },
-    { value: 'Customs Released',        label: '✅ Customs Released',           color: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
-    { value: 'Out for Delivery',        label: '🏃 Out for Delivery',           color: 'bg-lime-900/40 text-lime-400 border-lime-500/30',     dot: 'bg-lime-500' },
-    { value: 'Delivery Attempted',      label: '🔔 Delivery Attempted',         color: 'bg-amber-900/40 text-amber-400 border-amber-500/30',  dot: 'bg-amber-500' },
-    { value: 'Delivered',               label: '📬 Delivered',                  color: 'bg-green-900/40 text-green-400 border-green-500/30',  dot: 'bg-green-500' },
-    { value: 'Delayed',                 label: '⚠️ Delayed',                    color: 'bg-red-900/40 text-red-400 border-red-500/30',        dot: 'bg-red-500' },
-    { value: 'On Hold',                 label: '⏸️ On Hold',                    color: 'bg-slate-700/60 text-purple-200 border-slate-500/30',  dot: 'bg-slate-400' },
-    { value: 'Exception',               label: '🚨 Exception / Issue',          color: 'bg-red-900/60 text-red-300 border-red-400/40',        dot: 'bg-red-600' },
+    { value: 'Shipment Booked',         label: 'ðŸ“‹ Shipment Booked',           color: 'bg-blue-900/40 text-purple-400 border-purple-500/30',     dot: 'bg-purple-500' },
+    { value: 'Picked Up',               label: 'ðŸ›µ Picked Up',                  color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/30',     dot: 'bg-cyan-500' },
+    { value: 'Arrived at Origin Hub',   label: 'ðŸ­ Arrived at Origin Hub',      color: 'bg-indigo-900/40 text-indigo-400 border-indigo-500/30', dot: 'bg-indigo-500' },
+    { value: 'Departed Origin',         label: 'âœˆï¸ Departed Origin',            color: 'bg-violet-900/40 text-violet-400 border-violet-500/30', dot: 'bg-violet-500' },
+    { value: 'In Transit',              label: 'ðŸšš In Transit',                  color: 'bg-yellow-900/40 text-yellow-400 border-yellow-500/30', dot: 'bg-yellow-500' },
+    { value: 'Arrived at Transit Hub',  label: 'ðŸ”„ Arrived at Transit Hub',     color: 'bg-orange-900/40 text-orange-400 border-orange-500/30', dot: 'bg-orange-400' },
+    { value: 'Departed Transit Hub',    label: 'ðŸ›« Departed Transit Hub',       color: 'bg-pink-900/40 text-pink-400 border-pink-500/30',     dot: 'bg-pink-500' },
+    { value: 'Arrived at Destination',  label: 'ðŸ›¬ Arrived at Destination',     color: 'bg-teal-900/40 text-teal-400 border-teal-500/30',     dot: 'bg-teal-500' },
+    { value: 'Customs Clearance',       label: 'ðŸ›ƒ Customs Clearance',          color: 'bg-purple-900/40 text-purple-400 border-purple-500/30', dot: 'bg-purple-500' },
+    { value: 'Customs Released',        label: 'âœ… Customs Released',           color: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
+    { value: 'Out for Delivery',        label: 'ðŸƒ Out for Delivery',           color: 'bg-lime-900/40 text-lime-400 border-lime-500/30',     dot: 'bg-lime-500' },
+    { value: 'Delivery Attempted',      label: 'ðŸ”” Delivery Attempted',         color: 'bg-amber-900/40 text-amber-400 border-amber-500/30',  dot: 'bg-amber-500' },
+    { value: 'Delivered',               label: 'ðŸ“¬ Delivered',                  color: 'bg-green-900/40 text-green-400 border-green-500/30',  dot: 'bg-green-500' },
+    { value: 'Delayed',                 label: 'âš ï¸ Delayed',                    color: 'bg-red-900/40 text-red-400 border-red-500/30',        dot: 'bg-red-500' },
+    { value: 'On Hold',                 label: 'â¸ï¸ On Hold',                    color: 'bg-slate-700/60 text-purple-200 border-slate-500/30',  dot: 'bg-slate-400' },
+    { value: 'Exception',               label: 'ðŸš¨ Exception / Issue',          color: 'bg-red-900/60 text-red-300 border-red-400/40',        dot: 'bg-red-600' },
   ];
 
   const getStatusStyle = (statusValue) => {
@@ -166,7 +166,7 @@ export default function App() {
     e.preventDefault();
     const shipment = ledgerData.find(s => s.nexora_airwaybill?.toLowerCase() === trackingAwb.toLowerCase());
     if (!shipment) {
-      setTrackingMsg('❌ Koi shipment nahi mila is AWB se');
+      setTrackingMsg('âŒ Koi shipment nahi mila is AWB se');
       setSelectedAwbShipment(null);
       setTrackingUpdates([]);
       return;
@@ -195,7 +195,7 @@ export default function App() {
       created_at: insertTime
     }]);
     if (!error) {
-      setTrackingMsg('✅ Tracking update add ho gaya!');
+      setTrackingMsg('âœ… Tracking update add ho gaya!');
       setNewUpdate({ location: '', status: 'Picked Up', description: '', custom_time: '' });
       const { data } = await supabase
         .from('tracking_updates')
@@ -204,7 +204,7 @@ export default function App() {
         .order('created_at', { ascending: false });
       if (data) setTrackingUpdates(data);
     } else {
-      setTrackingMsg('❌ Error: ' + error.message);
+      setTrackingMsg('âŒ Error: ' + error.message);
     }
   };
 
@@ -383,7 +383,7 @@ export default function App() {
 
   const shareLedgerWhatsApp = (customerName) => {
     const metrics = getLedgerMetrics(customerName);
-    const text = `Dear Customer, here is your statement summary for *${customerName}* from *Nexora Courier & Logistics*:\n\n📦 *Total Shipments:* ${metrics.totalCount}\n💳 *Total Amount Paid:* Rs ${metrics.totalPaid.toLocaleString()}\n⚠️ *Current Outstanding Balance:* Rs ${metrics.totalOutstanding.toLocaleString()}\n\nThank you for choosing Nexora!`;
+    const text = `Dear Customer, here is your statement summary for *${customerName}* from *United Trade International Courier & Logistics*:\n\nðŸ“¦ *Total Shipments:* ${metrics.totalCount}\nðŸ’³ *Total Amount Paid:* Rs ${metrics.totalPaid.toLocaleString()}\nâš ï¸ *Current Outstanding Balance:* Rs ${metrics.totalOutstanding.toLocaleString()}\n\nThank you for choosing UT International!`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -392,7 +392,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen font-sans" style={{background: 'linear-gradient(135deg, #0a0010 0%, #0d0018 50%, #080010 100%)'}}>
 
-      {/* ═══ PREMIUM SIDEBAR ═══ */}
+      {/* â•â•â• PREMIUM SIDEBAR â•â•â• */}
       <div className="w-64 flex flex-col justify-between fixed h-full" style={{background: 'linear-gradient(180deg, #0f0020 0%, #0a0018 100%)', borderRight: '1px solid rgba(139,92,246,0.15)'}}>
         {/* Logo */}
         <div>
@@ -401,21 +401,21 @@ export default function App() {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background: 'linear-gradient(135deg, #7c3aed, #a855f7)'}}>
                 <span className="text-white text-xs font-black">N</span>
               </div>
-              <h1 className="text-lg font-black tracking-widest" style={{background: 'linear-gradient(90deg, #c084fc, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>NEXORA ERP</h1>
+              <h1 className="text-lg font-black tracking-widest" style={{background: 'linear-gradient(90deg, #c084fc, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>UNITED TRADE INTERNATIONAL</h1>
             </div>
             <p className="text-xs ml-10" style={{color: 'rgba(167,139,250,0.5)'}}>Global Logistics Control</p>
           </div>
 
           <nav className="px-3 py-2 space-y-1">
             {[
-              { id: 'dashboard', icon: '▦', label: 'Dashboard', color: 'purple' },
-              { id: 'pending', icon: '◉', label: 'Pending Requests', badge: pendingData.length, color: 'orange' },
-              { id: 'new_shipment', icon: '⊕', label: 'New Shipment', color: 'purple' },
-              { id: 'history', icon: '≡', label: 'Shipment History', color: 'purple' },
-              { id: 'customers', icon: '◈', label: 'Customers / Ledgers', color: 'purple' },
-              { id: 'tracking_control', icon: '◎', label: 'Tracking Control', color: 'purple' },
-              { id: 'vendors', icon: '◆', label: 'Vendors', color: 'rose' },
-              { id: 'registered', icon: '⊞', label: 'Registered Users', badge: profilesData.length, color: 'purple' },
+              { id: 'dashboard', icon: 'â–¦', label: 'Dashboard', color: 'purple' },
+              { id: 'pending', icon: 'â—‰', label: 'Pending Requests', badge: pendingData.length, color: 'orange' },
+              { id: 'new_shipment', icon: 'âŠ•', label: 'New Shipment', color: 'purple' },
+              { id: 'history', icon: 'â‰¡', label: 'Shipment History', color: 'purple' },
+              { id: 'customers', icon: 'â—ˆ', label: 'Customers / Ledgers', color: 'purple' },
+              { id: 'tracking_control', icon: 'â—Ž', label: 'Tracking Control', color: 'purple' },
+              { id: 'vendors', icon: 'â—†', label: 'Vendors', color: 'rose' },
+              { id: 'registered', icon: 'âŠž', label: 'Registered Users', badge: profilesData.length, color: 'purple' },
             ].map(tab => {
               const isActive = activeTab === tab.id;
               return (
@@ -451,7 +451,7 @@ export default function App() {
         </div>
 
         <div className="p-4 text-center" style={{borderTop: '1px solid rgba(139,92,246,0.1)'}}>
-          <p className="text-xs" style={{color: 'rgba(139,92,246,0.4)'}}>v3.0 • Premium ERP Suite</p>
+          <p className="text-xs" style={{color: 'rgba(139,92,246,0.4)'}}>v3.0 â€¢ Premium ERP Suite</p>
         </div>
       </div>
 
@@ -464,10 +464,10 @@ export default function App() {
             {/* Header */}
             <div className="mb-8">
               <h2 className="text-3xl font-black text-white tracking-tight mb-1">Admin Dashboard</h2>
-              <p className="text-sm" style={{color:'rgba(167,139,250,0.6)'}}>Nexora Courier & Logistics — Real-time Overview</p>
+              <p className="text-sm" style={{color:'rgba(167,139,250,0.6)'}}>United Trade International Courier & Logistics â€” Real-time Overview</p>
             </div>
 
-            {/* ROW 1 — 3 big cards */}
+            {/* ROW 1 â€” 3 big cards */}
             <div className="grid grid-cols-3 gap-5 mb-5">
               {/* Total Shipments */}
               <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a0035 0%, #0f001f 100%)', border:'1px solid rgba(139,92,246,0.25)'}}>
@@ -475,7 +475,7 @@ export default function App() {
                 <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(167,139,250,0.6)'}}>Total Shipments</p>
                 <p className="text-5xl font-black text-white mb-1">{metrics.totalShipments}</p>
                 <p className="text-xs" style={{color:'rgba(139,92,246,0.5)'}}>All time</p>
-                <div className="absolute bottom-4 right-5 text-4xl opacity-10">📦</div>
+                <div className="absolute bottom-4 right-5 text-4xl opacity-10">ðŸ“¦</div>
               </div>
               {/* Total Revenue */}
               <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a1200 0%, #0f0a00 100%)', border:'1px solid rgba(234,179,8,0.2)'}}>
@@ -483,7 +483,7 @@ export default function App() {
                 <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(234,179,8,0.6)'}}>Total Revenue</p>
                 <p className="text-3xl font-black text-yellow-400 mb-1">Rs {metrics.totalRevenue.toLocaleString()}</p>
                 <p className="text-xs" style={{color:'rgba(234,179,8,0.4)'}}>Gross billing</p>
-                <div className="absolute bottom-4 right-5 text-4xl opacity-10">💰</div>
+                <div className="absolute bottom-4 right-5 text-4xl opacity-10">ðŸ’°</div>
               </div>
               {/* Total Buying Cost */}
               <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a0800 0%, #0f0500 100%)', border:'1px solid rgba(249,115,22,0.2)'}}>
@@ -491,11 +491,11 @@ export default function App() {
                 <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(249,115,22,0.6)'}}>Total Buying Cost</p>
                 <p className="text-3xl font-black text-orange-400 mb-1">Rs {metrics.totalCost.toLocaleString()}</p>
                 <p className="text-xs" style={{color:'rgba(249,115,22,0.4)'}}>Vendor ko diye gaye</p>
-                <div className="absolute bottom-4 right-5 text-4xl opacity-10">💸</div>
+                <div className="absolute bottom-4 right-5 text-4xl opacity-10">ðŸ’¸</div>
               </div>
             </div>
 
-            {/* ROW 2 — 5 smaller cards */}
+            {/* ROW 2 â€” 5 smaller cards */}
             <div className="grid grid-cols-5 gap-4 mb-5">
               <div className="rounded-2xl p-5" style={{background:'linear-gradient(135deg, #001a0f 0%, #000f08 100%)', border:'1px solid rgba(16,185,129,0.2)'}}>
                 <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{color:'rgba(16,185,129,0.6)'}}>Net Profit</p>
@@ -524,7 +524,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* ROW 3 — 3 stat cards */}
+            {/* ROW 3 â€” 3 stat cards */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               {[
                 { label: 'Pending Requests', value: pendingData.length, color: '#f97316', bg: '#1a0800', border: 'rgba(249,115,22,0.2)' },
@@ -566,10 +566,10 @@ export default function App() {
           </div>
         )}
 
-        {/* ─── TRACKING CONTROL TAB ──────────────────────────────────────────── */}
+        {/* â”€â”€â”€ TRACKING CONTROL TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {activeTab === 'tracking_control' && (
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-black text-white mb-2">🗺️ Tracking Control Panel</h2>
+            <h2 className="text-2xl font-black text-white mb-2">ðŸ—ºï¸ Tracking Control Panel</h2>
             <p className="text-purple-300 mb-6">Kisi bhi shipment ki location aur status manually update karo</p>
 
             {/* SEARCH AWB */}
@@ -584,10 +584,10 @@ export default function App() {
                   required
                 />
                 <button type="submit" className="bg-purple-600 hover:bg-purple-500 text-white font-bold px-6 rounded-lg transition-all">
-                  🔍 Search
+                  ðŸ” Search
                 </button>
               </form>
-              {trackingMsg && !trackingMsg.startsWith('✅') && (
+              {trackingMsg && !trackingMsg.startsWith('âœ…') && (
                 <p className="text-red-400 text-sm mt-3">{trackingMsg}</p>
               )}
             </div>
@@ -648,7 +648,7 @@ export default function App() {
 
                     {/* Custom Date/Time */}
                     <div>
-                      <label className="text-xs text-purple-300 mb-1 block">Date & Time (optional — default: now)</label>
+                      <label className="text-xs text-purple-300 mb-1 block">Date & Time (optional â€” default: now)</label>
                       <input
                         type="datetime-local"
                         className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
@@ -658,13 +658,13 @@ export default function App() {
                     </div>
 
                     {trackingMsg && (
-                      <div className={`col-span-2 text-xs p-3 rounded-lg ${trackingMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
+                      <div className={`col-span-2 text-xs p-3 rounded-lg ${trackingMsg.startsWith('âœ…') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
                         {trackingMsg}
                       </div>
                     )}
                     <div className="col-span-2">
                       <button type="submit" className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-all">
-                        ➕ Add Tracking Update
+                        âž• Add Tracking Update
                       </button>
                     </div>
                   </form>
@@ -673,7 +673,7 @@ export default function App() {
                 {/* TIMELINE */}
                 <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6">
                   <h3 className="font-bold text-purple-200 mb-5">
-                    📍 Live Tracking Timeline
+                    ðŸ“ Live Tracking Timeline
                     <span className="ml-2 text-xs bg-purple-900/50 text-purple-400 border border-purple-700 px-2 py-0.5 rounded-full font-normal">
                       {trackingUpdates.length} updates
                     </span>
@@ -706,14 +706,14 @@ export default function App() {
                                       <span className="ml-2 text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">LATEST</span>
                                     )}
                                     {/* Location */}
-                                    <p className="font-bold text-white text-sm">📍 {update.location}</p>
+                                    <p className="font-bold text-white text-sm">ðŸ“ {update.location}</p>
                                     {/* Description */}
                                     {update.description && (
                                       <p className="text-purple-300 text-xs mt-1">{update.description}</p>
                                     )}
                                     {/* Time */}
                                     <p className="text-purple-400/70 text-xs mt-1.5">
-                                      🕐 {new Date(update.created_at).toLocaleString('en-PK', {
+                                      ðŸ• {new Date(update.created_at).toLocaleString('en-PK', {
                                         day: '2-digit', month: 'short', year: 'numeric',
                                         hour: '2-digit', minute: '2-digit'
                                       })}
@@ -726,7 +726,7 @@ export default function App() {
                                     className="text-red-500/50 hover:text-red-400 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all flex-shrink-0"
                                     title="Delete this update"
                                   >
-                                    🗑️
+                                    ðŸ—‘ï¸
                                   </button>
                                 </div>
                               </div>
@@ -746,12 +746,12 @@ export default function App() {
         {activeTab === 'pending' && (
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className="text-2xl font-black text-white">🔔 Pending Shipment Requests</h2>
+              <h2 className="text-2xl font-black text-white">ðŸ”” Pending Shipment Requests</h2>
               <span className="bg-orange-500 text-white text-sm font-black px-3 py-1 rounded-full">{pendingData.length} New</span>
             </div>
             {pendingData.length === 0 ? (
               <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-16 text-center">
-                <p className="text-4xl mb-4">✅</p>
+                <p className="text-4xl mb-4">âœ…</p>
                 <p className="text-purple-300 font-medium">Koi pending request nahi hai</p>
               </div>
             ) : (
@@ -762,12 +762,12 @@ export default function App() {
                       <div className="grid grid-cols-4 gap-6 flex-1">
                         <div><p className="text-xs text-purple-300 mb-1">Customer</p><p className="font-bold text-white">{item.sender_name}</p><p className="text-xs text-purple-300">{item.sender_email}</p></div>
                         <div><p className="text-xs text-purple-300 mb-1">Receiver</p><p className="font-bold text-white">{item.receiver}</p><p className="text-xs text-purple-300">{item.receiver_phone}</p></div>
-                        <div><p className="text-xs text-purple-300 mb-1">Destination</p><p className="font-bold text-purple-400">{item.destination}</p><p className="text-xs text-purple-300">{item.weight} KG • {item.service}</p></div>
+                        <div><p className="text-xs text-purple-300 mb-1">Destination</p><p className="font-bold text-purple-400">{item.destination}</p><p className="text-xs text-purple-300">{item.weight} KG â€¢ {item.service}</p></div>
                         <div><p className="text-xs text-purple-300 mb-1">AWB</p><p className="font-mono text-xs text-purple-200">{item.nexora_airwaybill}</p><p className="text-xs text-purple-300">{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A'}</p></div>
                       </div>
                       <div className="flex gap-2 ml-6">
-                        <button type="button" onClick={() => handleApprovePending(item)} className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">✅ Approve</button>
-                        <button type="button" onClick={() => handleRejectPending(item.id)} className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 font-bold px-4 py-2 rounded-lg text-sm transition-all">❌ Reject</button>
+                        <button type="button" onClick={() => handleApprovePending(item)} className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">âœ… Approve</button>
+                        <button type="button" onClick={() => handleRejectPending(item.id)} className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 font-bold px-4 py-2 rounded-lg text-sm transition-all">âŒ Reject</button>
                       </div>
                     </div>
                   </div>
@@ -780,7 +780,7 @@ export default function App() {
         {/* REGISTERED USERS */}
         {activeTab === 'registered' && (
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-2xl font-black text-white mb-2">🆕 Registered Users</h2>
+            <h2 className="text-2xl font-black text-white mb-2">ðŸ†• Registered Users</h2>
             <p className="text-purple-300 mb-6">Website pe signup karne wale tamam users</p>
             <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6">
               <table className="w-full text-left border-collapse">
@@ -794,7 +794,7 @@ export default function App() {
                     <tr><td colSpan={5} className="text-center py-8 text-purple-300">Abhi tak koi signup nahi hua</td></tr>
                   ) : profilesData.map((profile, idx) => (
                     <tr key={idx} className="border-b border-purple-800/40 hover:bg-purple-900/60/30 transition-all">
-                      <td className="py-3.5 px-2 font-bold text-white">👤 {profile.full_name || 'N/A'}</td>
+                      <td className="py-3.5 px-2 font-bold text-white">ðŸ‘¤ {profile.full_name || 'N/A'}</td>
                       <td className="py-3.5 px-2 text-purple-200">{profile.email || 'N/A'}</td>
                       <td className="py-3.5 px-2 text-purple-200 font-mono">{profile.phone || 'N/A'}</td>
                       <td className="py-3.5 px-2 text-purple-300 text-xs">{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</td>
@@ -802,7 +802,7 @@ export default function App() {
                         {profile.phone && profile.phone !== 'N/A' ? (
                           <button type="button" onClick={() => window.open(`https://wa.me/92${profile.phone.replace(/^0/, '').replace(/\D/g, '')}`, '_blank')}
                             className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 px-3 py-1 rounded-md text-xs font-bold transition-all">
-                            💬 WhatsApp
+                            ðŸ’¬ WhatsApp
                           </button>
                         ) : <span className="text-slate-600 text-xs">No phone</span>}
                       </td>
@@ -819,12 +819,12 @@ export default function App() {
           <div>
             {!labelData ? (
               <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-purple-950/90 p-8 rounded-xl border border-purple-700/50 shadow-xl">
-                <h2 className="text-2xl font-bold mb-6 text-purple-400">📦 New Shipment Entry</h2>
+                <h2 className="text-2xl font-bold mb-6 text-purple-400">ðŸ“¦ New Shipment Entry</h2>
 
                 {/* DATE ROW */}
                 <div className="mb-5 p-4 rounded-xl flex items-center gap-4" style={{background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)'}}>
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-purple-400 block mb-1">📅 Shipment Date</label>
+                    <label className="text-xs font-bold text-purple-400 block mb-1">ðŸ“… Shipment Date</label>
                     <input
                       type="date"
                       className="w-full bg-purple-900/60 border border-purple-500/30 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
@@ -839,7 +839,7 @@ export default function App() {
                       onClick={() => setFormData({...formData, shipment_date: todayStr()})}
                       className="text-xs px-3 py-1.5 rounded-lg font-bold transition-all"
                       style={{background:'rgba(124,58,237,0.2)', color:'#a78bfa', border:'1px solid rgba(124,58,237,0.3)'}}>
-                      🔄 Aaj ki Date
+                      ðŸ”„ Aaj ki Date
                     </button>
                   </div>
                 </div>
@@ -888,7 +888,7 @@ export default function App() {
                               setShowSuggestions(false);
                             }}>
                             <p className="font-bold text-white">{s.sender_name}</p>
-                            <p className="text-xs text-purple-300 mt-0.5">{s.sender_phone} • {s.sender_email}</p>
+                            <p className="text-xs text-purple-300 mt-0.5">{s.sender_phone} â€¢ {s.sender_email}</p>
                           </button>
                         ))}
                       </div>
@@ -913,8 +913,8 @@ export default function App() {
               </form>
             ) : (
               <div className="max-w-md mx-auto bg-white text-black p-6 rounded-lg border-4 border-black shadow-2xl">
-                <h1 className="text-2xl font-black">NEXORA LOGISTICS</h1>
-                <p className="text-3xl font-black my-4 border-y-2 border-black py-2">{labelData.nexoraTracking}</p>
+                <h1 className="text-2xl font-black">UT INTERNATIONAL LOGISTICS</h1>
+                <p className="text-3xl font-black my-4 border-y-2 border-black py-2">{labelData.UtinternationalTracking}</p>
                 <p><strong>To:</strong> {labelData.receiver_name}</p>
                 <p><strong>Dest:</strong> {labelData.destination}</p>
                 <p><strong>Service:</strong> {labelData.service}</p>
@@ -974,7 +974,7 @@ export default function App() {
                   <tbody className="text-sm">
                     {getUniqueCustomers().map((cust, idx) => (
                       <tr key={idx} className="border-b border-purple-800/40 hover:bg-purple-900/60/40 transition-all">
-                        <td className="py-3.5 px-2 font-bold text-purple-400 cursor-pointer hover:underline" onClick={() => setSelectedCustomer(cust.name)}>👤 {cust.name}</td>
+                        <td className="py-3.5 px-2 font-bold text-purple-400 cursor-pointer hover:underline" onClick={() => setSelectedCustomer(cust.name)}>ðŸ‘¤ {cust.name}</td>
                         <td className="py-3.5 px-2 text-purple-200">{cust.phone}</td>
                         <td className="py-3.5 px-2 text-purple-200">{cust.email}</td>
                         <td className="py-3.5 px-2 font-mono"><span className="bg-purple-900/60 px-2 py-0.5 rounded text-green-400 font-bold">{cust.totalShipments}</span></td>
@@ -1006,12 +1006,12 @@ export default function App() {
                       <h2 className="text-2xl font-black text-white mt-1">{selectedCustomer}</h2>
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => shareLedgerWhatsApp(selectedCustomer)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all">🟢 WhatsApp Share</button>
+                      <button type="button" onClick={() => shareLedgerWhatsApp(selectedCustomer)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all">ðŸŸ¢ WhatsApp Share</button>
                       <button type="button" onClick={() => setSelectedCustomer(null)} className="bg-purple-900/60 hover:bg-slate-700 text-purple-200 px-4 py-2 rounded-lg text-sm font-bold border border-purple-700/50 transition-all">Back to List</button>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 bg-black p-4 rounded-lg mb-6 border border-purple-800/40">
-                    <input type="text" className="bg-purple-950/90 border border-purple-700/50 rounded p-2 text-xs text-white focus:outline-none focus:border-purple-500" placeholder="🔍 Search AWB, Receiver or Vendor No..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input type="text" className="bg-purple-950/90 border border-purple-700/50 rounded p-2 text-xs text-white focus:outline-none focus:border-purple-500" placeholder="ðŸ” Search AWB, Receiver or Vendor No..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     <div className="flex items-center gap-2 text-xs"><span className="text-purple-300">From:</span><input type="date" className="bg-purple-950/90 border border-purple-700/50 rounded p-1.5 text-white flex-1" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
                     <div className="flex items-center gap-2 text-xs"><span className="text-purple-300">To:</span><input type="date" className="bg-purple-950/90 border border-purple-700/50 rounded p-1.5 text-white flex-1" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></div>
                   </div>
@@ -1019,7 +1019,7 @@ export default function App() {
                     <table className="w-full text-left border-collapse text-xs min-w-[1500px]">
                       <thead>
                         <tr className="text-purple-300 border-b border-purple-700/50 uppercase tracking-wider font-semibold">
-                          <th className="pb-3 px-2">S.No</th><th className="pb-3 px-2">Date</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2">Nexora AWB</th><th className="pb-3 px-2">Forwarding AWB</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Weight</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Remote</th><th className="pb-3 px-2 text-right">Debit</th><th className="pb-3 px-2 text-right text-red-300">Remote Chg</th><th className="pb-3 px-2 text-right text-orange-400">Petrol</th><th className="pb-3 px-2 text-right text-green-400">Credit</th><th className="pb-3 px-2 text-right text-yellow-400">Balance</th><th className="pb-3 px-2 text-right text-emerald-400">Profit</th><th className="pb-3 px-2 text-center">Action</th>
+                          <th className="pb-3 px-2">S.No</th><th className="pb-3 px-2">Date</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2">Ut International AWB</th><th className="pb-3 px-2">Forwarding AWB</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Weight</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Remote</th><th className="pb-3 px-2 text-right">Debit</th><th className="pb-3 px-2 text-right text-red-300">Remote Chg</th><th className="pb-3 px-2 text-right text-orange-400">Petrol</th><th className="pb-3 px-2 text-right text-green-400">Credit</th><th className="pb-3 px-2 text-right text-yellow-400">Balance</th><th className="pb-3 px-2 text-right text-emerald-400">Profit</th><th className="pb-3 px-2 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
@@ -1054,42 +1054,42 @@ export default function App() {
             )}
           </div>
         )}
-        {/* ─── VENDORS TAB ──────────────────────────────────────────────────── */}
+        {/* â”€â”€â”€ VENDORS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {activeTab === 'vendors' && (() => {
           // Total buying cost from ALL shipments (automatic)
           const totalDue = ledgerData.reduce((sum, item) => sum + Number(item.buying_rate || 0), 0);
 
           return (
             <div className="max-w-2xl mx-auto">
-              <h2 className="text-2xl font-black text-white mb-2">🏢 Vendor Payment</h2>
+              <h2 className="text-2xl font-black text-white mb-2">ðŸ¢ Vendor Payment</h2>
               <p className="text-purple-300 text-sm mb-6">Vendor ko kitna dena tha, diya, aur baaki hai</p>
 
               {/* SUMMARY CARD */}
               <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 mb-6">
                 <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider mb-4">Overall Summary</h3>
                 <div className="grid grid-cols-3 gap-4">
-                  {/* Total Due — automatic from ledger */}
+                  {/* Total Due â€” automatic from ledger */}
                   <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 text-center">
-                    <p className="text-xs text-amber-400 font-bold mb-1">💸 Total Due</p>
+                    <p className="text-xs text-amber-400 font-bold mb-1">ðŸ’¸ Total Due</p>
                     <p className="text-2xl font-black text-amber-400">Rs {totalDue.toLocaleString()}</p>
                     <p className="text-xs text-purple-400/70 mt-1">Sab shipments ka buying cost</p>
                   </div>
-                  {/* Total Paid — from vendors table */}
+                  {/* Total Paid â€” from vendors table */}
                   <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-4 text-center">
-                    <p className="text-xs text-green-400 font-bold mb-1">✅ Total Paid</p>
+                    <p className="text-xs text-green-400 font-bold mb-1">âœ… Total Paid</p>
                     <p className="text-2xl font-black text-green-400">
                       Rs {vendors.reduce((s, v) => s + Number(v.total_paid || 0), 0).toLocaleString()}
                     </p>
                     <p className="text-xs text-purple-400/70 mt-1">Vendor ko de diye</p>
                   </div>
-                  {/* Baaki — automatic */}
+                  {/* Baaki â€” automatic */}
                   {(() => {
                     const paid = vendors.reduce((s, v) => s + Number(v.total_paid || 0), 0);
                     const baaki = totalDue - paid;
                     return (
                       <div className={`border rounded-xl p-4 text-center ${baaki > 0 ? 'bg-rose-900/20 border-rose-500/30' : 'bg-green-900/20 border-green-500/30'}`}>
                         <p className={`text-xs font-bold mb-1 ${baaki > 0 ? 'text-rose-400' : 'text-green-400'}`}>
-                          {baaki > 0 ? '🔴 Baaki' : '✅ Clear'}
+                          {baaki > 0 ? 'ðŸ”´ Baaki' : 'âœ… Clear'}
                         </p>
                         <p className={`text-2xl font-black ${baaki > 0 ? 'text-rose-400' : 'text-green-400'}`}>
                           Rs {Math.abs(baaki).toLocaleString()}
@@ -1121,11 +1121,11 @@ export default function App() {
               {/* PAYMENT ENTRIES */}
               <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 mb-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-purple-200">💳 Payment History</h3>
+                  <h3 className="font-bold text-purple-200">ðŸ’³ Payment History</h3>
                   <button type="button"
                     onClick={() => setShowAddVendor(!showAddVendor)}
                     className="bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2 rounded-lg transition-all text-sm">
-                    {showAddVendor ? '✕ Cancel' : '➕ Payment Add Karo'}
+                    {showAddVendor ? 'âœ• Cancel' : 'âž• Payment Add Karo'}
                   </button>
                 </div>
 
@@ -1143,7 +1143,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-green-400 font-bold block mb-1">✅ Amount Paid (Rs)</label>
+                      <label className="text-xs text-green-400 font-bold block mb-1">âœ… Amount Paid (Rs)</label>
                       <input type="number"
                         className="w-full bg-purple-900/60 border border-green-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-green-500"
                         placeholder="e.g. 10000"
@@ -1153,7 +1153,7 @@ export default function App() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-purple-400 font-bold block mb-1">📅 Payment Date</label>
+                      <label className="text-xs text-purple-400 font-bold block mb-1">ðŸ“… Payment Date</label>
                       <input type="date"
                         className="w-full bg-purple-900/60 border border-purple-500/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
                         value={vendorForm.payment_date}
@@ -1171,12 +1171,12 @@ export default function App() {
                       />
                     </div>
                     {vendorMsg && (
-                      <div className={`text-xs p-3 rounded-lg ${vendorMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
+                      <div className={`text-xs p-3 rounded-lg ${vendorMsg.startsWith('âœ…') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>
                         {vendorMsg}
                       </div>
                     )}
                     <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg transition-all">
-                      ✅ Payment Save Karo
+                      âœ… Payment Save Karo
                     </button>
                   </form>
                 )}
@@ -1184,7 +1184,7 @@ export default function App() {
                 {/* PAYMENTS LIST */}
                 {vendors.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-3xl mb-2">💳</p>
+                    <p className="text-3xl mb-2">ðŸ’³</p>
                     <p className="text-purple-300 text-sm">Abhi koi payment entry nahi</p>
                   </div>
                 ) : (
@@ -1205,9 +1205,9 @@ export default function App() {
                               <div className="flex items-center gap-3">
                                 <p className="text-xl font-black text-green-400">Rs {Number(v.total_paid || 0).toLocaleString()}</p>
                                 <button type="button" onClick={() => handleEditVendor(v)}
-                                  className="text-yellow-400 hover:text-yellow-300 text-xs font-bold px-2 py-1 rounded hover:bg-yellow-900/20 transition-all">✏️</button>
+                                  className="text-yellow-400 hover:text-yellow-300 text-xs font-bold px-2 py-1 rounded hover:bg-yellow-900/20 transition-all">âœï¸</button>
                                 <button type="button" onClick={() => handleDeleteVendor(v.id)}
-                                  className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all">🗑️</button>
+                                  className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all">ðŸ—‘ï¸</button>
                               </div>
                             </div>
                           ) : (
@@ -1219,7 +1219,7 @@ export default function App() {
                                   onChange={(e) => setEditVendorForm({...editVendorForm, name: e.target.value})} required />
                               </div>
                               <div>
-                                <label className="text-xs text-green-400 font-bold block mb-1">✅ Amount Paid</label>
+                                <label className="text-xs text-green-400 font-bold block mb-1">âœ… Amount Paid</label>
                                 <input type="number" className="w-full bg-purple-900/60 border border-green-500/50 rounded-lg p-2.5 text-white text-sm"
                                   value={editVendorForm.total_paid}
                                   onChange={(e) => setEditVendorForm({...editVendorForm, total_paid: e.target.value})} />
@@ -1231,7 +1231,7 @@ export default function App() {
                                   onChange={(e) => setEditVendorForm({...editVendorForm, notes: e.target.value})} />
                               </div>
                               <div className="flex gap-2">
-                                <button type="submit" className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-all text-sm">✅ Save</button>
+                                <button type="submit" className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-all text-sm">âœ… Save</button>
                                 <button type="button" onClick={() => setEditVendorId(null)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg transition-all text-sm">Cancel</button>
                               </div>
                             </form>
@@ -1254,7 +1254,7 @@ export default function App() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-purple-950/90 p-6 rounded-xl border border-purple-700/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <h3 className="text-xl font-bold mb-4 text-yellow-400 border-b border-purple-700/50 pb-2">✅ Approve & Setup Shipment</h3>
+            <h3 className="text-xl font-bold mb-4 text-yellow-400 border-b border-purple-700/50 pb-2">âœ… Approve & Setup Shipment</h3>
             <form onSubmit={handleUpdate} className="grid grid-cols-2 gap-4 text-sm">
               <div><label className="text-xs text-purple-300">Sender Name</label><input className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.sender_name} onChange={(e) => setEditFormData({...editFormData, sender_name: e.target.value})} /></div>
               <div><label className="text-xs text-purple-300">Receiver Name</label><input className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.receiver_name} onChange={(e) => setEditFormData({...editFormData, receiver_name: e.target.value})} required /></div>
@@ -1268,16 +1268,16 @@ export default function App() {
               <div><label className="text-xs text-purple-300">Remote Charges</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.remote_charges} onChange={(e) => setEditFormData({...editFormData, remote_charges: e.target.value})} /></div>
               <div><label className="text-xs text-purple-300">Debit Amount</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.debit} onChange={(e) => setEditFormData({...editFormData, debit: e.target.value})} /></div>
               <div><label className="text-xs text-purple-300">Petrol Surcharge</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} /></div>
-              <div><label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
+              <div><label className="text-xs text-amber-500 font-bold">ðŸ’¸ Ut International Buying Cost</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
               <div><label className="text-xs text-green-400 font-bold">Credit Amount</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-green-600 text-white font-mono" value={editFormData.credit} onChange={(e) => setEditFormData({...editFormData, credit: e.target.value})} /></div>
               <div className="col-span-2 border border-rose-500/30 bg-rose-900/10 rounded-lg p-3">
-                <label className="text-xs text-rose-400 font-bold block mb-1">🔴 Vendor Ko Diye Gaye (Vendor Paid)</label>
+                <label className="text-xs text-rose-400 font-bold block mb-1">ðŸ”´ Vendor Ko Diye Gaye (Vendor Paid)</label>
                 <input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-rose-500 text-white font-mono text-lg" placeholder="0" value={editFormData.vendor_paid} onChange={(e) => setEditFormData({...editFormData, vendor_paid: e.target.value})} />
                 <p className="text-xs text-purple-400/70 mt-1">Vendor Baaki: Rs {Math.max(0, Number(editFormData.buying_rate || 0) - Number(editFormData.vendor_paid || 0)).toLocaleString()}</p>
               </div>
               <div className="col-span-2"><label className="text-xs text-purple-300">Service Label</label><select className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.service} onChange={(e) => setEditFormData({...editFormData, service: e.target.value})} required><option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option></select></div>
               <div className="col-span-2 flex gap-2 mt-4">
-                <button type="submit" className="flex-1 bg-green-600 py-2.5 rounded-lg font-bold hover:bg-green-500 transition-all text-white">✅ Approve & Save</button>
+                <button type="submit" className="flex-1 bg-green-600 py-2.5 rounded-lg font-bold hover:bg-green-500 transition-all text-white">âœ… Approve & Save</button>
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-700 py-2.5 rounded-lg font-bold hover:bg-slate-600 transition-all text-white">Cancel</button>
               </div>
             </form>
