@@ -408,14 +408,14 @@ export default function App() {
 
           <nav className="px-3 py-2 space-y-1">
             {[
-              { id: 'dashboard', icon: 'â–¦', label: 'Dashboard', color: 'purple' },
-              { id: 'pending', icon: 'â—‰', label: 'Pending Requests', badge: pendingData.length, color: 'orange' },
-              { id: 'new_shipment', icon: 'âŠ•', label: 'New Shipment', color: 'purple' },
-              { id: 'history', icon: 'â‰¡', label: 'Shipment History', color: 'purple' },
-              { id: 'customers', icon: 'â—ˆ', label: 'Customers / Ledgers', color: 'purple' },
-              { id: 'tracking_control', icon: 'â—Ž', label: 'Tracking Control', color: 'purple' },
-              { id: 'vendors', icon: 'â—†', label: 'Vendors', color: 'rose' },
-              { id: 'registered', icon: 'âŠž', label: 'Registered Users', badge: profilesData.length, color: 'purple' },
+              { id: 'dashboard', icon: 'ðŸ“Š', label: 'Dashboard', color: 'purple' },
+              { id: 'pending', icon: 'ðŸ””', label: 'Pending Requests', badge: pendingData.length, color: 'orange' },
+              { id: 'new_shipment', icon: 'ðŸ“¦', label: 'New Shipment', color: 'purple' },
+              { id: 'history', icon: 'ðŸ“‘', label: 'Shipment History', color: 'purple' },
+              { id: 'customers', icon: 'ðŸ‘¥', label: 'Customers / Ledgers', color: 'purple' },
+              { id: 'tracking_control', icon: 'ðŸ—ºï¸', label: 'Tracking Control', color: 'purple' },
+              { id: 'vendors', icon: 'ðŸ¢', label: 'Vendors', color: 'rose' },
+              { id: 'registered', icon: 'ðŸ†•', label: 'Registered Users', badge: profilesData.length, color: 'purple' },
             ].map(tab => {
               const isActive = activeTab === tab.id;
               return (
