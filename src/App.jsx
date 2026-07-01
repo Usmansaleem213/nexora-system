@@ -14,8 +14,11 @@ export default function App() {
   const [formData, setFormData] = useState({
     sender_name: '', sender_address: '', sender_phone: '', sender_email: '',
     receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '',
-    destination: '', weight: '', service: ''
+    destination: '', weight: '', service: '',
+    shipment_date: todayStr()
   });
+  const [senderSuggestions, setSenderSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [ledgerData, setLedgerData] = useState([]);
   const [pendingData, setPendingData] = useState([]);
   const [profilesData, setProfilesData] = useState([]);
@@ -225,6 +228,7 @@ export default function App() {
     const totalWeight = ledgerData.reduce((sum, item) => sum + Number(item.weight || 0), 0);
     const totalOutstanding = ledgerData.reduce((sum, item) =>
       sum + Number(item.debit || 0) + Number(item.petrol || 0) + Number(item.remote_charges || 0) - Number(item.credit || 0), 0);
+    // Vendor paid/baaki from vendors table
     const totalVendorPaid = vendors.reduce((sum, v) => sum + Number(v.total_paid || 0), 0);
     const totalVendorBaaki = totalCost - totalVendorPaid;
     return { totalShipments, totalRevenue, totalNetProfit, totalWeight, totalOutstanding, totalCost, totalVendorPaid, totalVendorBaaki };
@@ -272,28 +276,37 @@ export default function App() {
   };
 
   const handleViewLabel = (item, fromTab) => {
-    setLabelData({ utTracking: item.nexora_airwaybill, receiver_name: item.receiver, destination: item.destination, service: item.service });
+    setLabelData({ nexoraTracking: item.nexora_airwaybill, receiver_name: item.receiver, destination: item.destination, service: item.service });
     setReturnTab(fromTab);
     setActiveTab('new_shipment');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const utTracking = "UT-" + Math.floor(100000000 + Math.random() * 900000000);
+    const nexoraTracking = "NX-" + Math.floor(100000000 + Math.random() * 900000000);
+    const chosenDate = formData.shipment_date
+      ? new Date(formData.shipment_date + 'T12:00:00').toISOString()
+      : new Date().toISOString();
     const dbPayload = {
-      nexora_airwaybill: utTracking, receiver: formData.receiver_name, destination: formData.destination,
+      nexora_airwaybill: nexoraTracking, receiver: formData.receiver_name, destination: formData.destination,
       weight: formData.weight, service: formData.service, sender_name: formData.sender_name,
       sender_address: formData.sender_address, sender_phone: formData.sender_phone, sender_email: formData.sender_email,
       receiver_address: formData.receiver_address, receiver_phone: formData.receiver_phone, receiver_email: formData.receiver_email,
       remote_status: 'Non-Remote', debit: 0, credit: 0, petrol: 0, remote_charges: 0,
-      buying_rate: 0, forwarding_awb: '', forward_vendor: '', status: 'approved'
+      buying_rate: 0, forwarding_awb: '', forward_vendor: '', status: 'approved',
+      created_at: chosenDate
     };
     const { error } = await supabase.from('customer_ledgers').insert([dbPayload]);
     if (!error) {
       setReturnTab('new_shipment');
-      setLabelData({ ...formData, utTracking });
+      setLabelData({ ...formData, nexoraTracking });
       fetchLedger();
-      setFormData({ sender_name: '', sender_address: '', sender_phone: '', sender_email: '', receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '', destination: '', weight: '', service: '' });
+      setFormData({
+        sender_name: '', sender_address: '', sender_phone: '', sender_email: '',
+        receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '',
+        destination: '', weight: '', service: '',
+        shipment_date: todayStr()
+      });
     } else { alert("Error saving data: " + error.message); }
   };
 
@@ -370,7 +383,7 @@ export default function App() {
 
   const shareLedgerWhatsApp = (customerName) => {
     const metrics = getLedgerMetrics(customerName);
-    const text = `Dear Customer, here is your statement summary for *${customerName}* from *UT International Trade Courier & Logistics*:\n\n📦 *Total Shipments:* ${metrics.totalCount}\n💳 *Total Amount Paid:* Rs ${metrics.totalPaid.toLocaleString()}\n⚠️ *Current Outstanding Balance:* Rs ${metrics.totalOutstanding.toLocaleString()}\n\nThank you for choosing UT International Trade!`;
+    const text = `Dear Customer, here is your statement summary for *${customerName}* from *Nexora Courier & Logistics*:\n\n📦 *Total Shipments:* ${metrics.totalCount}\n💳 *Total Amount Paid:* Rs ${metrics.totalPaid.toLocaleString()}\n⚠️ *Current Outstanding Balance:* Rs ${metrics.totalOutstanding.toLocaleString()}\n\nThank you for choosing Nexora!`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -386,9 +399,9 @@ export default function App() {
           <div className="p-6 mb-2" style={{borderBottom: '1px solid rgba(139,92,246,0.12)'}}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background: 'linear-gradient(135deg, #7c3aed, #a855f7)'}}>
-                <span className="text-white text-xs font-black">U</span>
+                <span className="text-white text-xs font-black">N</span>
               </div>
-              <h1 className="text-lg font-black tracking-widest" style={{background: 'linear-gradient(90deg, #c084fc, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>UT INTERNATIONAL TRADE</h1>
+              <h1 className="text-lg font-black tracking-widest" style={{background: 'linear-gradient(90deg, #c084fc, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>NEXORA ERP</h1>
             </div>
             <p className="text-xs ml-10" style={{color: 'rgba(167,139,250,0.5)'}}>Global Logistics Control</p>
           </div>
@@ -448,12 +461,15 @@ export default function App() {
         {/* DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="max-w-7xl mx-auto">
+            {/* Header */}
             <div className="mb-8">
               <h2 className="text-3xl font-black text-white tracking-tight mb-1">Admin Dashboard</h2>
-              <p className="text-sm" style={{color:'rgba(167,139,250,0.6)'}}>UT International Trade Courier & Logistics — Real-time Overview</p>
+              <p className="text-sm" style={{color:'rgba(167,139,250,0.6)'}}>Nexora Courier & Logistics — Real-time Overview</p>
             </div>
 
+            {/* ROW 1 — 3 big cards */}
             <div className="grid grid-cols-3 gap-5 mb-5">
+              {/* Total Shipments */}
               <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a0035 0%, #0f001f 100%)', border:'1px solid rgba(139,92,246,0.25)'}}>
                 <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{background:'radial-gradient(circle, #a855f7, transparent)', transform:'translate(30%, -30%)'}}></div>
                 <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(167,139,250,0.6)'}}>Total Shipments</p>
@@ -461,6 +477,7 @@ export default function App() {
                 <p className="text-xs" style={{color:'rgba(139,92,246,0.5)'}}>All time</p>
                 <div className="absolute bottom-4 right-5 text-4xl opacity-10">📦</div>
               </div>
+              {/* Total Revenue */}
               <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a1200 0%, #0f0a00 100%)', border:'1px solid rgba(234,179,8,0.2)'}}>
                 <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{background:'radial-gradient(circle, #eab308, transparent)', transform:'translate(30%, -30%)'}}></div>
                 <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(234,179,8,0.6)'}}>Total Revenue</p>
@@ -468,6 +485,7 @@ export default function App() {
                 <p className="text-xs" style={{color:'rgba(234,179,8,0.4)'}}>Gross billing</p>
                 <div className="absolute bottom-4 right-5 text-4xl opacity-10">💰</div>
               </div>
+              {/* Total Buying Cost */}
               <div className="rounded-2xl p-6 relative overflow-hidden" style={{background:'linear-gradient(135deg, #1a0800 0%, #0f0500 100%)', border:'1px solid rgba(249,115,22,0.2)'}}>
                 <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10" style={{background:'radial-gradient(circle, #f97316, transparent)', transform:'translate(30%, -30%)'}}></div>
                 <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{color:'rgba(249,115,22,0.6)'}}>Total Buying Cost</p>
@@ -477,6 +495,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* ROW 2 — 5 smaller cards */}
             <div className="grid grid-cols-5 gap-4 mb-5">
               <div className="rounded-2xl p-5" style={{background:'linear-gradient(135deg, #001a0f 0%, #000f08 100%)', border:'1px solid rgba(16,185,129,0.2)'}}>
                 <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{color:'rgba(16,185,129,0.6)'}}>Net Profit</p>
@@ -505,6 +524,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* ROW 3 — 3 stat cards */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               {[
                 { label: 'Pending Requests', value: pendingData.length, color: '#f97316', bg: '#1a0800', border: 'rgba(249,115,22,0.2)' },
@@ -518,6 +538,7 @@ export default function App() {
               ))}
             </div>
 
+            {/* Recent Shipments Table */}
             <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(135deg, #0d0020 0%, #08001a 100%)', border:'1px solid rgba(139,92,246,0.15)'}}>
               <div className="px-6 py-4" style={{borderBottom:'1px solid rgba(139,92,246,0.1)'}}>
                 <h3 className="font-bold text-white text-sm tracking-wide">Recent Shipments</h3>
@@ -545,18 +566,19 @@ export default function App() {
           </div>
         )}
 
-        {/* TRACKING CONTROL TAB */}
+        {/* ─── TRACKING CONTROL TAB ──────────────────────────────────────────── */}
         {activeTab === 'tracking_control' && (
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">🗺️ Tracking Control Panel</h2>
             <p className="text-purple-300 mb-6">Kisi bhi shipment ki location aur status manually update karo</p>
 
+            {/* SEARCH AWB */}
             <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 mb-6">
               <h3 className="font-bold text-purple-200 mb-4">Step 1: AWB Search Karo</h3>
               <form onSubmit={handleSearchTracking} className="flex gap-3">
                 <input
                   className="flex-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                  placeholder="Tracking Number daalo e.g. UT-123456789"
+                  placeholder="Nexora AWB daalo e.g. NX-123456789"
                   value={trackingAwb}
                   onChange={(e) => setTrackingAwb(e.target.value)}
                   required
@@ -572,6 +594,7 @@ export default function App() {
 
             {selectedAwbShipment && (
               <>
+                {/* SHIPMENT INFO */}
                 <div className="bg-purple-950/90 border border-purple-500/30 rounded-xl p-6 mb-6">
                   <div className="grid grid-cols-4 gap-4 text-sm">
                     <div><p className="text-xs text-purple-300">AWB</p><p className="font-mono font-bold text-purple-400">{selectedAwbShipment.nexora_airwaybill}</p></div>
@@ -581,10 +604,12 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* ADD NEW UPDATE */}
                 <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 mb-6">
                   <h3 className="font-bold text-purple-200 mb-4">Step 2: Naya Tracking Update Add Karo</h3>
                   <form onSubmit={handleAddTrackingUpdate} className="grid grid-cols-2 gap-4">
 
+                    {/* Status Dropdown */}
                     <div>
                       <label className="text-xs text-purple-300 mb-1 block">Status *</label>
                       <select
@@ -598,6 +623,7 @@ export default function App() {
                       </select>
                     </div>
 
+                    {/* Location */}
                     <div>
                       <label className="text-xs text-purple-300 mb-1 block">Location *</label>
                       <input
@@ -609,6 +635,7 @@ export default function App() {
                       />
                     </div>
 
+                    {/* Description */}
                     <div>
                       <label className="text-xs text-purple-300 mb-1 block">Description / Note</label>
                       <input
@@ -619,6 +646,7 @@ export default function App() {
                       />
                     </div>
 
+                    {/* Custom Date/Time */}
                     <div>
                       <label className="text-xs text-purple-300 mb-1 block">Date & Time (optional — default: now)</label>
                       <input
@@ -642,6 +670,7 @@ export default function App() {
                   </form>
                 </div>
 
+                {/* TIMELINE */}
                 <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6">
                   <h3 className="font-bold text-purple-200 mb-5">
                     📍 Live Tracking Timeline
@@ -654,6 +683,7 @@ export default function App() {
                     <p className="text-purple-300 text-sm text-center py-8">Abhi koi tracking update nahi hai</p>
                   ) : (
                     <div className="relative">
+                      {/* vertical line */}
                       <div className="absolute left-[18px] top-2 bottom-2 w-0.5 bg-slate-700 rounded-full"></div>
 
                       <div className="space-y-1">
@@ -662,21 +692,26 @@ export default function App() {
                           const isLatest = idx === 0;
                           return (
                             <div key={update.id} className={`flex gap-4 relative pl-10 pb-5 ${isLatest ? '' : 'opacity-75'}`}>
+                              {/* dot */}
                               <div className={`absolute left-[11px] top-1.5 w-4 h-4 rounded-full border-2 border-slate-900 ${style.dot} ${isLatest ? 'ring-2 ring-offset-1 ring-offset-slate-900 ring-purple-400' : ''}`}></div>
 
-                              <div className={`flex-1 rounded-xl p-4 border ${isLatest ? 'bg-purple-900/60 border-slate-600' : 'bg-purple-900/20 border-purple-700/50'}`}>
+                              <div className={`flex-1 rounded-xl p-4 border ${isLatest ? 'bg-purple-900/60/60 border-slate-600' : 'bg-purple-900/60/20 border-purple-700/50/50'}`}>
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1">
+                                    {/* Status badge */}
                                     <span className={`inline-block text-xs px-2 py-0.5 rounded border font-bold mb-2 ${style.color}`}>
                                       {update.status}
                                     </span>
                                     {isLatest && (
                                       <span className="ml-2 text-[10px] bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">LATEST</span>
                                     )}
+                                    {/* Location */}
                                     <p className="font-bold text-white text-sm">📍 {update.location}</p>
+                                    {/* Description */}
                                     {update.description && (
                                       <p className="text-purple-300 text-xs mt-1">{update.description}</p>
                                     )}
+                                    {/* Time */}
                                     <p className="text-purple-400/70 text-xs mt-1.5">
                                       🕐 {new Date(update.created_at).toLocaleString('en-PK', {
                                         day: '2-digit', month: 'short', year: 'numeric',
@@ -684,6 +719,7 @@ export default function App() {
                                       })}
                                     </p>
                                   </div>
+                                  {/* Delete */}
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteTrackingUpdate(update.id)}
@@ -757,7 +793,7 @@ export default function App() {
                   {profilesData.length === 0 ? (
                     <tr><td colSpan={5} className="text-center py-8 text-purple-300">Abhi tak koi signup nahi hua</td></tr>
                   ) : profilesData.map((profile, idx) => (
-                    <tr key={idx} className="border-b border-purple-800/40 hover:bg-purple-900/30 transition-all">
+                    <tr key={idx} className="border-b border-purple-800/40 hover:bg-purple-900/60/30 transition-all">
                       <td className="py-3.5 px-2 font-bold text-white">👤 {profile.full_name || 'N/A'}</td>
                       <td className="py-3.5 px-2 text-purple-200">{profile.email || 'N/A'}</td>
                       <td className="py-3.5 px-2 text-purple-200 font-mono">{profile.phone || 'N/A'}</td>
@@ -783,9 +819,82 @@ export default function App() {
           <div>
             {!labelData ? (
               <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-purple-950/90 p-8 rounded-xl border border-purple-700/50 shadow-xl">
-                <h2 className="text-2xl font-bold mb-6 text-purple-400">New Shipment Entry</h2>
+                <h2 className="text-2xl font-bold mb-6 text-purple-400">📦 New Shipment Entry</h2>
+
+                {/* DATE ROW */}
+                <div className="mb-5 p-4 rounded-xl flex items-center gap-4" style={{background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.25)'}}>
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-purple-400 block mb-1">📅 Shipment Date</label>
+                    <input
+                      type="date"
+                      className="w-full bg-purple-900/60 border border-purple-500/30 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
+                      value={formData.shipment_date}
+                      onChange={(e) => setFormData({...formData, shipment_date: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-purple-300 mb-1">Reset karo</p>
+                    <button type="button"
+                      onClick={() => setFormData({...formData, shipment_date: todayStr()})}
+                      className="text-xs px-3 py-1.5 rounded-lg font-bold transition-all"
+                      style={{background:'rgba(124,58,237,0.2)', color:'#a78bfa', border:'1px solid rgba(124,58,237,0.3)'}}>
+                      🔄 Aaj ki Date
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <input className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Sender Name" value={formData.sender_name} onChange={(e) => setFormData({...formData, sender_name: e.target.value})} required />
+
+                  {/* SENDER NAME with autocomplete */}
+                  <div className="relative">
+                    <input
+                      className="w-full bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white"
+                      placeholder="Sender Name"
+                      value={formData.sender_name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData({...formData, sender_name: val,
+                          sender_address: '', sender_phone: '', sender_email: ''
+                        });
+                        if (val.length > 0) {
+                          const unique = {};
+                          ledgerData.forEach(item => {
+                            if (item.sender_name && item.sender_name.toLowerCase().startsWith(val.toLowerCase())) {
+                              unique[item.sender_name] = item;
+                            }
+                          });
+                          setSenderSuggestions(Object.values(unique).slice(0, 5));
+                          setShowSuggestions(true);
+                        } else {
+                          setShowSuggestions(false);
+                        }
+                      }}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      required
+                    />
+                    {showSuggestions && senderSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden shadow-2xl" style={{background:'#1a0035', border:'1px solid rgba(139,92,246,0.4)'}}>
+                        {senderSuggestions.map((s, i) => (
+                          <button key={i} type="button"
+                            className="w-full text-left px-4 py-3 text-sm hover:bg-purple-700/40 transition-all border-b border-purple-800/30 last:border-0"
+                            onClick={() => {
+                              setFormData({...formData,
+                                sender_name: s.sender_name,
+                                sender_address: s.sender_address || '',
+                                sender_phone: s.sender_phone || '',
+                                sender_email: s.sender_email || ''
+                              });
+                              setShowSuggestions(false);
+                            }}>
+                            <p className="font-bold text-white">{s.sender_name}</p>
+                            <p className="text-xs text-purple-300 mt-0.5">{s.sender_phone} • {s.sender_email}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <input className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Receiver Name" value={formData.receiver_name} onChange={(e) => setFormData({...formData, receiver_name: e.target.value})} required />
                   <input className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Sender Address" value={formData.sender_address} onChange={(e) => setFormData({...formData, sender_address: e.target.value})} />
                   <input className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Receiver Address" value={formData.receiver_address} onChange={(e) => setFormData({...formData, receiver_address: e.target.value})} />
@@ -800,12 +909,12 @@ export default function App() {
                     <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
                   </select>
                 </div>
-                <button type="submit" className="w-full mt-6 bg-purple-600 py-3 rounded-lg font-bold hover:bg-purple-500 transition-all text-sm uppercase tracking-wider text-white">Generate Label</button>
+                <button type="submit" className="w-full mt-6 py-3 rounded-lg font-bold transition-all text-sm uppercase tracking-wider text-white" style={{background:'linear-gradient(135deg, #7c3aed, #6d28d9)'}}>Generate Label</button>
               </form>
             ) : (
               <div className="max-w-md mx-auto bg-white text-black p-6 rounded-lg border-4 border-black shadow-2xl">
-                <h1 className="text-2xl font-black">UT INTERNATIONAL TRADE</h1>
-                <p className="text-3xl font-black my-4 border-y-2 border-black py-2">{labelData.utTracking}</p>
+                <h1 className="text-2xl font-black">NEXORA LOGISTICS</h1>
+                <p className="text-3xl font-black my-4 border-y-2 border-black py-2">{labelData.nexoraTracking}</p>
                 <p><strong>To:</strong> {labelData.receiver_name}</p>
                 <p><strong>Dest:</strong> {labelData.destination}</p>
                 <p><strong>Service:</strong> {labelData.service}</p>
@@ -831,7 +940,7 @@ export default function App() {
                 </thead>
                 <tbody className="text-sm">
                   {ledgerData.map((item) => (
-                    <tr key={item.id} className="border-b border-purple-800/40 hover:bg-purple-900/40 transition-all">
+                    <tr key={item.id} className="border-b border-purple-800/40 hover:bg-purple-900/60/40 transition-all">
                       <td className="py-3.5 px-2 text-purple-400 font-mono font-bold">{item.nexora_airwaybill}</td>
                       <td className="py-3.5 px-2 text-purple-200">{item.sender_name || 'N/A'}</td>
                       <td className="py-3.5 px-2 font-medium text-white">{item.receiver}</td>
@@ -864,7 +973,7 @@ export default function App() {
                   </thead>
                   <tbody className="text-sm">
                     {getUniqueCustomers().map((cust, idx) => (
-                      <tr key={idx} className="border-b border-purple-800/40 hover:bg-purple-900/40 transition-all">
+                      <tr key={idx} className="border-b border-purple-800/40 hover:bg-purple-900/60/40 transition-all">
                         <td className="py-3.5 px-2 font-bold text-purple-400 cursor-pointer hover:underline" onClick={() => setSelectedCustomer(cust.name)}>👤 {cust.name}</td>
                         <td className="py-3.5 px-2 text-purple-200">{cust.phone}</td>
                         <td className="py-3.5 px-2 text-purple-200">{cust.email}</td>
@@ -910,12 +1019,12 @@ export default function App() {
                     <table className="w-full text-left border-collapse text-xs min-w-[1500px]">
                       <thead>
                         <tr className="text-purple-300 border-b border-purple-700/50 uppercase tracking-wider font-semibold">
-                          <th className="pb-3 px-2">S.No</th><th className="pb-3 px-2">Date</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2">Tracking AWB</th><th className="pb-3 px-2">Forwarding AWB</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Weight</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Remote</th><th className="pb-3 px-2 text-right">Debit</th><th className="pb-3 px-2 text-right text-red-300">Remote Chg</th><th className="pb-3 px-2 text-right text-orange-400">Petrol</th><th className="pb-3 px-2 text-right text-green-400">Credit</th><th className="pb-3 px-2 text-right text-yellow-400">Balance</th><th className="pb-3 px-2 text-right text-emerald-400">Profit</th><th className="pb-3 px-2 text-center">Action</th>
+                          <th className="pb-3 px-2">S.No</th><th className="pb-3 px-2">Date</th><th className="pb-3 px-2">Service</th><th className="pb-3 px-2">Nexora AWB</th><th className="pb-3 px-2">Forwarding AWB</th><th className="pb-3 px-2">Receiver</th><th className="pb-3 px-2">Weight</th><th className="pb-3 px-2">Destination</th><th className="pb-3 px-2">Remote</th><th className="pb-3 px-2 text-right">Debit</th><th className="pb-3 px-2 text-right text-red-300">Remote Chg</th><th className="pb-3 px-2 text-right text-orange-400">Petrol</th><th className="pb-3 px-2 text-right text-green-400">Credit</th><th className="pb-3 px-2 text-right text-yellow-400">Balance</th><th className="pb-3 px-2 text-right text-emerald-400">Profit</th><th className="pb-3 px-2 text-center">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
                         {getCalculatedLedger(selectedCustomer).map((item, idx, arr) => (
-                          <tr key={item.id} className="hover:bg-purple-900/30 transition-all">
+                          <tr key={item.id} className="hover:bg-purple-900/60/30 transition-all">
                             <td className="py-3 px-2 text-purple-400/70 font-mono">{arr.length - idx}</td>
                             <td className="py-3 px-2 text-purple-300">{item.created_at ? new Date(item.created_at).toLocaleDateString() : 'N/A'}</td>
                             <td className="py-3 px-2 font-bold text-purple-400">{item.service}</td>
@@ -945,9 +1054,9 @@ export default function App() {
             )}
           </div>
         )}
-
-        {/* VENDORS TAB */}
+        {/* ─── VENDORS TAB ──────────────────────────────────────────────────── */}
         {activeTab === 'vendors' && (() => {
+          // Total buying cost from ALL shipments (automatic)
           const totalDue = ledgerData.reduce((sum, item) => sum + Number(item.buying_rate || 0), 0);
 
           return (
@@ -955,14 +1064,17 @@ export default function App() {
               <h2 className="text-2xl font-black text-white mb-2">🏢 Vendor Payment</h2>
               <p className="text-purple-300 text-sm mb-6">Vendor ko kitna dena tha, diya, aur baaki hai</p>
 
+              {/* SUMMARY CARD */}
               <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 mb-6">
                 <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider mb-4">Overall Summary</h3>
                 <div className="grid grid-cols-3 gap-4">
+                  {/* Total Due — automatic from ledger */}
                   <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 text-center">
                     <p className="text-xs text-amber-400 font-bold mb-1">💸 Total Due</p>
                     <p className="text-2xl font-black text-amber-400">Rs {totalDue.toLocaleString()}</p>
                     <p className="text-xs text-purple-400/70 mt-1">Sab shipments ka buying cost</p>
                   </div>
+                  {/* Total Paid — from vendors table */}
                   <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-4 text-center">
                     <p className="text-xs text-green-400 font-bold mb-1">✅ Total Paid</p>
                     <p className="text-2xl font-black text-green-400">
@@ -970,6 +1082,7 @@ export default function App() {
                     </p>
                     <p className="text-xs text-purple-400/70 mt-1">Vendor ko de diye</p>
                   </div>
+                  {/* Baaki — automatic */}
                   {(() => {
                     const paid = vendors.reduce((s, v) => s + Number(v.total_paid || 0), 0);
                     const baaki = totalDue - paid;
@@ -987,6 +1100,7 @@ export default function App() {
                   })()}
                 </div>
 
+                {/* Progress bar */}
                 {totalDue > 0 && (() => {
                   const paid = vendors.reduce((s, v) => s + Number(v.total_paid || 0), 0);
                   const pct = Math.min(100, Math.round((paid / totalDue) * 100));
@@ -1004,6 +1118,7 @@ export default function App() {
                 })()}
               </div>
 
+              {/* PAYMENT ENTRIES */}
               <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 mb-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-purple-200">💳 Payment History</h3>
@@ -1014,8 +1129,9 @@ export default function App() {
                   </button>
                 </div>
 
+                {/* ADD PAYMENT FORM */}
                 {showAddVendor && (
-                  <form onSubmit={handleAddVendor} className="bg-purple-900/50 rounded-xl p-4 mb-4 space-y-3">
+                  <form onSubmit={handleAddVendor} className="bg-purple-900/60/50 rounded-xl p-4 mb-4 space-y-3">
                     <div>
                       <label className="text-xs text-purple-300 block mb-1">Payment Note / Label *</label>
                       <input
@@ -1065,6 +1181,7 @@ export default function App() {
                   </form>
                 )}
 
+                {/* PAYMENTS LIST */}
                 {vendors.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-3xl mb-2">💳</p>
@@ -1075,7 +1192,7 @@ export default function App() {
                     {vendors.map((v) => {
                       const isEditing = editVendorId === v.id;
                       return (
-                        <div key={v.id} className="bg-purple-900/40 border border-purple-700/50 rounded-xl p-4">
+                        <div key={v.id} className="bg-purple-900/60/40 border border-purple-700/50 rounded-xl p-4">
                           {!isEditing ? (
                             <div className="flex items-center justify-between">
                               <div>
@@ -1129,6 +1246,8 @@ export default function App() {
           );
         })()}
 
+
+
       </div>
 
       {/* EDIT MODAL */}
@@ -1149,7 +1268,7 @@ export default function App() {
               <div><label className="text-xs text-purple-300">Remote Charges</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.remote_charges} onChange={(e) => setEditFormData({...editFormData, remote_charges: e.target.value})} /></div>
               <div><label className="text-xs text-purple-300">Debit Amount</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.debit} onChange={(e) => setEditFormData({...editFormData, debit: e.target.value})} /></div>
               <div><label className="text-xs text-purple-300">Petrol Surcharge</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} /></div>
-              <div><label className="text-xs text-amber-500 font-bold">💸 Buying Cost</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
+              <div><label className="text-xs text-amber-500 font-bold">💸 Nexora Buying Cost</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
               <div><label className="text-xs text-green-400 font-bold">Credit Amount</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-green-600 text-white font-mono" value={editFormData.credit} onChange={(e) => setEditFormData({...editFormData, credit: e.target.value})} /></div>
               <div className="col-span-2 border border-rose-500/30 bg-rose-900/10 rounded-lg p-3">
                 <label className="text-xs text-rose-400 font-bold block mb-1">🔴 Vendor Ko Diye Gaye (Vendor Paid)</label>
