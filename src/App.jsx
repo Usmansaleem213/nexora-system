@@ -288,13 +288,30 @@ export default function App() {
       ? new Date(formData.shipment_date + 'T12:00:00').toISOString()
       : new Date().toISOString();
     const dbPayload = {
-      nexora_airwaybill: nexoraTracking, receiver: formData.receiver_name, destination: formData.destination,
-      weight: formData.weight, service: formData.service, sender_name: formData.sender_name,
-      sender_address: formData.sender_address, sender_phone: formData.sender_phone, sender_email: formData.sender_email,
-      receiver_address: formData.receiver_address, receiver_phone: formData.receiver_phone, receiver_email: formData.receiver_email,
-      remote_status: 'Non-Remote', debit: 0, credit: 0, petrol: 0, remote_charges: 0,
-      buying_rate: 0, forwarding_awb: '', forward_vendor: '', status: 'approved',
-      created_at: chosenDate
+  nexora_airwaybill: nexoraTracking, 
+  receiver: formData.receiver_name, 
+  destination: formData.destination || formData.destination_country, // dono me se jo chal jaye
+  weight: Number(formData.weight), // Isko text se number bana diya
+  service: formData.service || formData.preferred_service, // dono me se jo chal jaye
+  sender_name: formData.sender_name,
+  sender_address: formData.sender_address, 
+  sender_phone: formData.sender_phone, 
+  sender_email: formData.sender_email,
+  receiver_address: formData.receiver_address, 
+  receiver_phone: formData.receiver_phone, 
+  receiver_email: formData.receiver_email,
+  remote_status: 'Non-Remote', 
+  debit: 0, 
+  credit: 0, 
+  petrol: 0, 
+  remote_charges: 0,
+  buying_rate: 0, 
+  vendor_paid: 0, 
+  forwarding_awb: '', 
+  forwarding_vendor: '', 
+  status: 'approved',
+  created_at: chosenDate
+};
     };
     const { error } = await supabase.from('customer_ledgers').insert([dbPayload]);
     if (!error) {
