@@ -289,10 +289,10 @@ export default function App() {
       : new Date().toISOString();
     const dbPayload = {
   nexora_airwaybill: nexoraTracking, 
-  receiver: formData.receiver_name, 
-  destination: formData.destination || formData.destination_country, 
+  receiver_name: formData.receiver_name, // 'receiver' ki jagah 'receiver_name' kar diya
+  destination: formData.destination_country, 
   weight: Number(formData.weight), 
-  service: formData.service || formData.preferred_service,
+  service: formData.preferred_service,
   receiver_address: formData.receiver_address, 
   receiver_phone: formData.receiver_phone, 
   receiver_email: formData.receiver_email,
