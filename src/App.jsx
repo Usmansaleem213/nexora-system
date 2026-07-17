@@ -1287,7 +1287,6 @@ export default function App() {
             </form>
           </div>
         </div>
-      )}
-    </div>
-  );
-export default App;
+      </div>
+      );
+      export default App;

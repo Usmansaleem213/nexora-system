@@ -31,13 +31,18 @@ export default function CustomerPortal({ session, onLogout }) {
     setLoading(false);
   };
 
+  const [submitError, setSubmitError] = useState('');
+
   const handleNewShipment = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    const awb = 'NX-REQ-' + Math.floor(100000 + Math.random() * 900000);
+    setSubmitError('');
+    const awb = 'UT-REQ-' + Math.floor(100000 + Math.random() * 900000);
     const { error } = await supabase.from('customer_ledgers').insert([{
       sender_name: customerName,
       sender_email: customerEmail,
+      sender_address: '',
+      sender_phone: '',
       receiver: formData.receiver_name,
       receiver_address: formData.receiver_address,
       receiver_phone: formData.receiver_phone,
@@ -45,10 +50,11 @@ export default function CustomerPortal({ session, onLogout }) {
       destination: formData.destination,
       weight: formData.weight,
       service: formData.service,
-      ut_airwaybill: awb,
+      nexora_airwaybill: awb,
       remote_status: 'Non-Remote',
       debit: 0, credit: 0, petrol: 0, remote_charges: 0, buying_rate: 0,
-      forwarding_awb: '', forward_vendor: ''
+      forwarding_awb: '', forward_vendor: '',
+      status: 'pending'
     }]);
     if (!error) {
       setGeneratedLabel({
@@ -60,17 +66,19 @@ export default function CustomerPortal({ session, onLogout }) {
       });
       setFormData({ receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '', destination: '', weight: '', service: '', notes: '' });
       fetchMyShipments();
+    } else {
+      setSubmitError('❌ Booking fail ho gayi: ' + error.message);
     }
     setSubmitting(false);
   };
 
   const handleDownloadLabel = () => {
     const label = generatedLabel;
-    const html = `<html><head><style>body{font-family:Arial,sans-serif;padding:20px}.label{border:4px solid black;padding:24px;max-width:500px;margin:auto}.title{font-size:28px;font-weight:900}.awb{font-size:22px;font-weight:900;border-top:2px solid black;border-bottom:2px solid black;padding:10px 0;margin:12px 0}.row{margin:6px 0;font-size:14px}.label-bottom{margin-top:16px;font-size:12px;color:#555}</style></head><body><div class="label"><div class="title">ut LOGISTICS</div><div class="awb">${label.awb}</div><div class="row"><strong>From:</strong> ${label.sender_name}</div><div class="row"><strong>To:</strong> ${label.receiver_name}</div><div class="row"><strong>Address:</strong> ${label.receiver_address}</div><div class="row"><strong>Phone:</strong> ${label.receiver_phone}</div><div class="row"><strong>Destination:</strong> ${label.destination}</div><div class="row"><strong>Weight:</strong> ${label.weight} KG</div><div class="row"><strong>Service:</strong> ${label.service}</div><div class="row"><strong>Date:</strong> ${label.date}</div><div class="label-bottom">This is a ut booking reference. Final carrier label will be provided separately.</div></div></body></html>`;
+    const html = `<html><head><style>body{font-family:Arial,sans-serif;padding:20px}.label{border:4px solid black;padding:24px;max-width:500px;margin:auto}.title{font-size:28px;font-weight:900}.awb{font-size:22px;font-weight:900;border-top:2px solid black;border-bottom:2px solid black;padding:10px 0;margin:12px 0}.row{margin:6px 0;font-size:14px}.label-bottom{margin-top:16px;font-size:12px;color:#555}</style></head><body><div class="label"><div class="title">NEXORA LOGISTICS</div><div class="awb">${label.awb}</div><div class="row"><strong>From:</strong> ${label.sender_name}</div><div class="row"><strong>To:</strong> ${label.receiver_name}</div><div class="row"><strong>Address:</strong> ${label.receiver_address}</div><div class="row"><strong>Phone:</strong> ${label.receiver_phone}</div><div class="row"><strong>Destination:</strong> ${label.destination}</div><div class="row"><strong>Weight:</strong> ${label.weight} KG</div><div class="row"><strong>Service:</strong> ${label.service}</div><div class="row"><strong>Date:</strong> ${label.date}</div><div class="label-bottom">This is a Nexora booking reference. Final carrier label will be provided separately.</div></div></body></html>`;
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `ut_Label_${label.awb}.html`; a.click();
+    a.href = url; a.download = `Nexora_Label_${label.awb}.html`; a.click();
   };
 
   const totalSpending = shipments.reduce((sum, s) => sum + Number(s.debit || 0) + Number(s.petrol || 0) + Number(s.remote_charges || 0), 0);
@@ -84,7 +92,7 @@ export default function CustomerPortal({ session, onLogout }) {
       <div className="w-64 bg-purple-950/90 border-r border-purple-800/40 flex flex-col justify-between fixed h-full">
         <div>
           <div className="p-6 border-b border-purple-800/40">
-            <h1 className="text-xl font-black tracking-wider text-purple-500">ut</h1>
+            <h1 className="text-xl font-black tracking-wider text-purple-500">NEXORA</h1>
             <p className="text-xs text-purple-300 mt-1">Customer Portal</p>
           </div>
           <nav className="p-4 space-y-2">
@@ -153,7 +161,7 @@ export default function CustomerPortal({ session, onLogout }) {
                 <tbody>
                   {shipments.slice(0, 5).map(s => (
                     <tr key={s.id} className="border-b border-purple-800/40 hover:bg-purple-900/60/30">
-                      <td className="py-3 px-2 font-mono text-purple-400 text-xs">{s.ut_airwaybill}</td>
+                      <td className="py-3 px-2 font-mono text-purple-400 text-xs">{s.nexora_airwaybill}</td>
                       <td className="py-3 px-2 text-white">{s.receiver}</td>
                       <td className="py-3 px-2 text-purple-200">{s.destination}</td>
                       <td className="py-3 px-2"><span className="bg-purple-900/60 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
@@ -227,6 +235,11 @@ export default function CustomerPortal({ session, onLogout }) {
                         </select>
                       </div>
                     </div>
+                    {submitError && (
+                      <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-400 text-xs">
+                        {submitError}
+                      </div>
+                    )}
                     <button type="submit" disabled={submitting}
                       className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-all text-sm uppercase tracking-wider">
                       {submitting ? 'Generating...' : '📦 Submit & Generate Label'}
@@ -240,7 +253,7 @@ export default function CustomerPortal({ session, onLogout }) {
                 <p className="text-purple-300 mb-6">Your label is ready — save or print it</p>
                 <div ref={labelRef} className="bg-white text-black p-8 rounded-xl border-4 border-black shadow-2xl max-w-md mx-auto mb-6">
                   <div className="border-b-2 border-black pb-3 mb-4">
-                    <h1 className="text-2xl font-black tracking-widest">ut LOGISTICS</h1>
+                    <h1 className="text-2xl font-black tracking-widest">NEXORA LOGISTICS</h1>
                     <p className="text-xs text-gray-500">Courier & International Shipping</p>
                   </div>
                   <div className="bg-black text-white text-center py-3 px-4 rounded mb-4">
@@ -274,7 +287,7 @@ export default function CustomerPortal({ session, onLogout }) {
                     </div>
                   </div>
                   <div className="border-t border-gray-300 mt-4 pt-3 text-xs text-gray-400 text-center">
-                    Date: {generatedLabel.date} • ut-logistics.com
+                    Date: {generatedLabel.date} • nexora-logistics.com
                   </div>
                 </div>
                 <div className="flex gap-3 max-w-md mx-auto">
@@ -307,12 +320,12 @@ export default function CustomerPortal({ session, onLogout }) {
               <button type="button"
                 onClick={() => {
                   const rows = shipments.map((s, i) =>
-                    `${i+1},${s.ut_airwaybill},${s.receiver},${s.destination},${s.service},${s.debit || 0},${s.credit || 0},${new Date(s.created_at).toLocaleDateString()}`
+                    `${i+1},${s.nexora_airwaybill},${s.receiver},${s.destination},${s.service},${s.debit || 0},${s.credit || 0},${new Date(s.created_at).toLocaleDateString()}`
                   ).join('\n');
                   const csv = `S.No,AWB,Receiver,Destination,Service,Debit,Credit,Date\n${rows}`;
                   const blob = new Blob([csv], { type: 'text/csv' });
                   const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a'); a.href = url; a.download = 'ut_ledger.csv'; a.click();
+                  const a = document.createElement('a'); a.href = url; a.download = 'nexora_ledger.csv'; a.click();
                 }}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">
                 📥 Download CSV
@@ -342,7 +355,7 @@ export default function CustomerPortal({ session, onLogout }) {
                     <tr key={s.id} className="border-b border-purple-800/40 hover:bg-purple-900/60/30">
                       <td className="py-3 px-2 text-purple-400/70">{shipments.length - idx}</td>
                       <td className="py-3 px-2 text-purple-300 text-xs">{s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A'}</td>
-                      <td className="py-3 px-2 font-mono text-purple-400 text-xs">{s.ut_airwaybill}</td>
+                      <td className="py-3 px-2 font-mono text-purple-400 text-xs">{s.nexora_airwaybill}</td>
                       <td className="py-3 px-2 text-white font-medium">{s.receiver}</td>
                       <td className="py-3 px-2 text-purple-200">{s.destination}</td>
                       <td className="py-3 px-2"><span className="bg-purple-900/60 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
@@ -365,7 +378,7 @@ export default function CustomerPortal({ session, onLogout }) {
         {activeTab === 'tracking' && (
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-black text-white mb-2">Track Your Parcel 🔍</h2>
-            <p className="text-purple-300 mb-6">Enter your ut AWB number to see live tracking</p>
+            <p className="text-purple-300 mb-6">Enter your Nexora AWB number to see live tracking</p>
             <TrackingSection shipments={shipments} />
           </div>
         )}
@@ -440,7 +453,7 @@ function TrackingSection({ shipments }) {
     e.preventDefault();
     // Search in customer's own shipments first, then allow any AWB
     const found = shipments.find(s =>
-      s.ut_airwaybill?.toLowerCase() === trackingNo.trim().toLowerCase()
+      s.nexora_airwaybill?.toLowerCase() === trackingNo.trim().toLowerCase()
     );
 
     if (found) {
@@ -451,7 +464,7 @@ function TrackingSection({ shipments }) {
       const { data } = await supabase
         .from('customer_ledgers')
         .select('*')
-        .ilike('ut_airwaybill', trackingNo.trim())
+        .ilike('nexora_airwaybill', trackingNo.trim())
         .single();
       if (data) {
         setResult(data);
@@ -485,7 +498,7 @@ function TrackingSection({ shipments }) {
       <form onSubmit={handleTrack} className="flex gap-3 mb-6">
         <input
           className="flex-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-          placeholder="Enter ut AWB e.g. NX-123456789"
+          placeholder="Enter Nexora AWB e.g. NX-123456789"
           value={trackingNo}
           onChange={(e) => setTrackingNo(e.target.value)}
           required
@@ -508,8 +521,8 @@ function TrackingSection({ shipments }) {
           <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <p className="text-xs text-purple-300 mb-1">ut AWB</p>
-                <p className="text-xl font-black font-mono text-purple-400">{result.ut_airwaybill}</p>
+                <p className="text-xs text-purple-300 mb-1">Nexora AWB</p>
+                <p className="text-xl font-black font-mono text-purple-400">{result.nexora_airwaybill}</p>
               </div>
               {latestStatus ? (
                 <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${latestStyle.color}`}>
@@ -623,7 +636,7 @@ function TrackingSection({ shipments }) {
                     <div className="absolute left-[8px] top-1 w-[15px] h-[15px] rounded-full border-2 border-purple-700/50 bg-slate-600 flex-shrink-0"></div>
                     <div className="flex-1 pb-2">
                       <p className="text-purple-400/70 text-xs font-medium">
-                        📋 Shipment registered in ut system
+                        📋 Shipment registered in Nexora system
                       </p>
                       {result.created_at && (
                         <p className="text-slate-600 text-xs mt-0.5">
