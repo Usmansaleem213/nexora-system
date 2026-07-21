@@ -1010,7 +1010,17 @@ export default function App() {
                       <h2 className="text-2xl font-black text-white mt-1">{selectedCustomer}</h2>
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => shareLedgerWhatsApp(selectedCustomer)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all">🟢 WhatsApp Share</button>
+                      <button type="button" onClick={() => {
+  setFormData({
+    ...formData,
+    sender_name: selectedCustomer,
+    sender_phone: getUniqueCustomers().find(c => c.name === selectedCustomer)?.phone !== 'N/A' ? getUniqueCustomers().find(c => c.name === selectedCustomer)?.phone || '' : '',
+    sender_email: getUniqueCustomers().find(c => c.name === selectedCustomer)?.email !== 'N/A' ? getUniqueCustomers().find(c => c.name === selectedCustomer)?.email || '' : '',
+    shipment_date: todayStr()
+  });
+  setActiveTab('new_shipment');
+  setLabelData(null);
+}} className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all">➕ Add Shipment</button>
                       <button type="button" onClick={() => setSelectedCustomer(null)} className="bg-purple-900/60 hover:bg-slate-700 text-purple-200 px-4 py-2 rounded-lg text-sm font-bold border border-purple-700/50 transition-all">Back to List</button>
                     </div>
                   </div>
