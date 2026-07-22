@@ -74,7 +74,7 @@ export default function CustomerPortal({ session, onLogout }) {
 
   const handleDownloadLabel = () => {
     const label = generatedLabel;
-    const html = `<html><head><style>body{font-family:Arial,sans-serif;padding:20px}.label{border:4px solid black;padding:24px;max-width:500px;margin:auto}.title{font-size:28px;font-weight:900}.awb{font-size:22px;font-weight:900;border-top:2px solid black;border-bottom:2px solid black;padding:10px 0;margin:12px 0}.row{margin:6px 0;font-size:14px}.label-bottom{margin-top:16px;font-size:12px;color:#555}</style></head><body><div class="label"><div class="title">NEXORA LOGISTICS</div><div class="awb">${label.awb}</div><div class="row"><strong>From:</strong> ${label.sender_name}</div><div class="row"><strong>To:</strong> ${label.receiver_name}</div><div class="row"><strong>Address:</strong> ${label.receiver_address}</div><div class="row"><strong>Phone:</strong> ${label.receiver_phone}</div><div class="row"><strong>Destination:</strong> ${label.destination}</div><div class="row"><strong>Weight:</strong> ${label.weight} KG</div><div class="row"><strong>Service:</strong> ${label.service}</div><div class="row"><strong>Date:</strong> ${label.date}</div><div class="label-bottom">This is a Nexora booking reference. Final carrier label will be provided separately.</div></div></body></html>`;
+    const html = `<html><head><style>body{font-family:Arial,sans-serif;padding:20px}.label{border:4px solid black;padding:24px;max-width:500px;margin:auto}.title{font-size:28px;font-weight:900}.awb{font-size:22px;font-weight:900;border-top:2px solid black;border-bottom:2px solid black;padding:10px 0;margin:12px 0}.row{margin:6px 0;font-size:14px}.label-bottom{margin-top:16px;font-size:12px;color:#555}</style></head><body><div class="label"><div class="title">UT INTERNATIONAL</div><div class="awb">${label.awb}</div><div class="row"><strong>From:</strong> ${label.sender_name}</div><div class="row"><strong>To:</strong> ${label.receiver_name}</div><div class="row"><strong>Address:</strong> ${label.receiver_address}</div><div class="row"><strong>Phone:</strong> ${label.receiver_phone}</div><div class="row"><strong>Destination:</strong> ${label.destination}</div><div class="row"><strong>Weight:</strong> ${label.weight} KG</div><div class="row"><strong>Service:</strong> ${label.service}</div><div class="row"><strong>Date:</strong> ${label.date}</div><div class="label-bottom">This is a UT International booking reference. Final carrier label will be provided separately.</div></div></body></html>`;
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -221,19 +221,29 @@ export default function CustomerPortal({ session, onLogout }) {
                           onChange={(e) => setFormData({...formData, weight: e.target.value})} required />
                       </div>
                       <div>
-                        <label className="text-xs text-purple-300">Preferred Service *</label>
-                        <select className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                          value={formData.service} onChange={(e) => setFormData({...formData, service: e.target.value})} required>
-                          <option value="">Select Service</option>
-                          <option value="DHL">DHL</option>
-                          <option value="FedEx">FedEx</option>
-                          <option value="UPS">UPS</option>
-                          <option value="Skynet">Skynet</option>
-                          <option value="Aramex">Aramex</option>
-                          <option value="TCS">TCS</option>
-                          <option value="Other">Other / Not Sure</option>
-                        </select>
-                      </div>
+              <label className="text-xs text-purple-300">Shipment Date *</label>
+              <input 
+                type="date" 
+                className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white" 
+                value={formData.shipment_date || ''} 
+                onChange={(e) => setFormData({...formData, shipment_date: e.target.value})} 
+                required 
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-purple-300">Preferred Service *</label>
+              <select className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm" value={formData.service} onChange={(e) => setFormData({...formData, service: e.target.value})} required>
+                <option value="">Select Service</option>
+                <option value="DHL">DHL</option>
+                <option value="FedEx">FedEx</option>
+                <option value="UPS">UPS</option>
+                <option value="Skynet">Skynet</option>
+                <option value="Aramex">Aramex</option>
+                <option value="TCS">TCS</option>
+                <option value="Other">Other </option>
+              </select>
+            </div>
                     </div>
                     {submitError && (
                       <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-400 text-xs">
@@ -253,7 +263,7 @@ export default function CustomerPortal({ session, onLogout }) {
                 <p className="text-purple-300 mb-6">Your label is ready — save or print it</p>
                 <div ref={labelRef} className="bg-white text-black p-8 rounded-xl border-4 border-black shadow-2xl max-w-md mx-auto mb-6">
                   <div className="border-b-2 border-black pb-3 mb-4">
-                    <h1 className="text-2xl font-black tracking-widest">NEXORA LOGISTICS</h1>
+                    <h1 className="text-2xl font-black tracking-widest">UT INTERNATIONAL</h1>
                     <p className="text-xs text-gray-500">Courier & International Shipping</p>
                   </div>
                   <div className="bg-black text-white text-center py-3 px-4 rounded mb-4">

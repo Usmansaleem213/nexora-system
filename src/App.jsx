@@ -282,37 +282,45 @@ export default function App() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const nexoraTracking = "NX-" + Math.floor(100000000 + Math.random() * 900000000);
-    const chosenDate = formData.shipment_date
-      ? new Date(formData.shipment_date + 'T12:00:00').toISOString()
-      : new Date().toISOString();
-    const dbPayload = {
-  nexora_airwaybill: nexoraTracking, 
-  receiver_name: formData.receiver_name, // 'receiver' ki jagah 'receiver_name' kar diya
-  destination: formData.destination_country, 
-  weight: Number(formData.weight), 
-  service: formData.preferred_service,
-  receiver_address: formData.receiver_address, 
-  receiver_phone: formData.receiver_phone, 
-  receiver_email: formData.receiver_email,
-  status: 'approved',
-  created_at: chosenDate
-};
-    };
-    const { error } = await supabase.from('customer_ledgers').insert([dbPayload]);
-    if (!error) {
-      setReturnTab('new_shipment');
-      setLabelData({ ...formData, nexoraTracking });
-      fetchLedger();
-      setFormData({
-        sender_name: '', sender_address: '', sender_phone: '', sender_email: '',
-        receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '',
-        destination: '', weight: '', service: '',
-        shipment_date: todayStr()
-      });
-    } else { alert("Error saving data: " + error.message); }
+  e.preventDefault();
+  const nexoraTracking = "NX-" + Math.floor(100000000 + Math.random() * 900000000);
+  const chosenDate = formData.shipment_date
+    ? new Date(formData.shipment_date + 'T12:00:00').toISOString()
+    : new Date().toISOString();
+
+  const dbPayload = {
+    nexora_airwaybill: nexoraTracking,
+    sender_name: formData.sender_name,
+    sender_address: formData.sender_address,
+    sender_phone: formData.sender_phone,
+    sender_email: formData.sender_email,
+    receiver: formData.receiver_name,
+    receiver_address: formData.receiver_address,
+    receiver_phone: formData.receiver_phone,
+    receiver_email: formData.receiver_email,
+    destination: formData.destination,
+    weight: Number(formData.weight),
+    service: formData.service,
+    status: 'approved',
+    created_at: chosenDate
   };
+
+  const { error } = await supabase.from('customer_ledgers').insert([dbPayload]);
+  if (!error) {
+    setReturnTab('new_shipment');
+    setLabelData({ ...formData, nexoraTracking });
+    fetchLedger();
+    setFormData({
+      sender_name: '', sender_address: '', sender_phone: '', sender_email: '',
+      receiver_name: '', receiver_address: '', receiver_phone: '', receiver_email: '',
+      destination: '', weight: '', service: '',
+      shipment_date: todayStr()
+    });
+  } else {
+    alert("Error saving data: " + error.message);
+  }
+};
+  
 
   const handleEditClick = (item) => {
     setEditId(item.id);
@@ -908,6 +916,7 @@ export default function App() {
                   <input className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Receiver Email" value={formData.receiver_email} onChange={(e) => setFormData({...formData, receiver_email: e.target.value})} />
                   <input className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Destination" value={formData.destination} onChange={(e) => setFormData({...formData, destination: e.target.value})} />
                   <input className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Weight (kg)" value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} />
+                  <input type="date" className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" value={formData.shipment_date || ''} onChange={(e) => setFormData({...formData, shipment_date: e.target.value})} required />
                   <select className="col-span-2 bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-purple-200" value={formData.service} onChange={(e) => setFormData({...formData, service: e.target.value})} required>
                     <option value="">Select Service</option>
                     <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
@@ -1268,35 +1277,30 @@ export default function App() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-purple-950/90 p-6 rounded-xl border border-purple-700/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <h3 className="text-xl font-bold mb-4 text-yellow-400 border-b border-purple-700/50 pb-2">✅ Approve & Setup Shipment</h3>
-            <form onSubmit={handleUpdate} className="grid grid-cols-2 gap-4 text-sm">
-              <div><label className="text-xs text-purple-300">Sender Name</label><input className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.sender_name} onChange={(e) => setEditFormData({...editFormData, sender_name: e.target.value})} /></div>
-              <div><label className="text-xs text-purple-300">Receiver Name</label><input className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.receiver_name} onChange={(e) => setEditFormData({...editFormData, receiver_name: e.target.value})} required /></div>
-              <div><label className="text-xs text-purple-300">Destination</label><input className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.destination} onChange={(e) => setEditFormData({...editFormData, destination: e.target.value})} /></div>
-              <div><label className="text-xs text-purple-300">Weight (kg)</label><input className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.weight} onChange={(e) => setEditFormData({...editFormData, weight: e.target.value})} /></div>
-              <div className="col-span-2 border-t border-purple-800/40 pt-3 mt-1 text-purple-400 font-bold">Forwarding & Route Vendor Details</div>
-              <div><label className="text-xs text-purple-300">Forward Vendor Partner</label><select className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.forward_vendor} onChange={(e) => setEditFormData({...editFormData, forward_vendor: e.target.value})}><option value="">Select Vendor</option><option value="DHL">DHL Forwarding</option><option value="FedEx">FedEx Express</option><option value="UPS">UPS Cargo</option><option value="Skynet">Skynet Network</option></select></div>
-              <div><label className="text-xs text-purple-300">Forwarding Tracking Number (AWB)</label><input className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" placeholder="e.g. DHL-9832141" value={editFormData.forwarding_awb} onChange={(e) => setEditFormData({...editFormData, forwarding_awb: e.target.value})} /></div>
-              <div className="col-span-2 border-t border-purple-800/40 pt-3 mt-1 text-emerald-400 font-bold">Ledger Accounts & Profit Tracking</div>
-              <div><label className="text-xs text-purple-300">Remote Status</label><select className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.remote_status} onChange={(e) => setEditFormData({...editFormData, remote_status: e.target.value})}><option value="Non-Remote">Non-Remote</option><option value="Remote">Remote Area</option></select></div>
-              <div><label className="text-xs text-purple-300">Remote Charges</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.remote_charges} onChange={(e) => setEditFormData({...editFormData, remote_charges: e.target.value})} /></div>
-              <div><label className="text-xs text-purple-300">Debit Amount</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.debit} onChange={(e) => setEditFormData({...editFormData, debit: e.target.value})} /></div>
-              <div><label className="text-xs text-purple-300">Petrol Surcharge</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white font-mono" value={editFormData.petrol} onChange={(e) => setEditFormData({...editFormData, petrol: e.target.value})} /></div>
-              <div><label className="text-xs text-amber-500 font-bold">💸 Ut International Buying Cost</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-amber-600 text-white font-mono" value={editFormData.buying_rate} onChange={(e) => setEditFormData({...editFormData, buying_rate: e.target.value})} /></div>
-              <div><label className="text-xs text-green-400 font-bold">Credit Amount</label><input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-green-600 text-white font-mono" value={editFormData.credit} onChange={(e) => setEditFormData({...editFormData, credit: e.target.value})} /></div>
-              <div className="col-span-2 border border-rose-500/30 bg-rose-900/10 rounded-lg p-3">
-                <label className="text-xs text-rose-400 font-bold block mb-1">🔴 Vendor Ko Diye Gaye (Vendor Paid)</label>
-                <input type="number" className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-rose-500 text-white font-mono text-lg" placeholder="0" value={editFormData.vendor_paid} onChange={(e) => setEditFormData({...editFormData, vendor_paid: e.target.value})} />
-                <p className="text-xs text-purple-400/70 mt-1">Vendor Baaki: Rs {Math.max(0, Number(editFormData.buying_rate || 0) - Number(editFormData.vendor_paid || 0)).toLocaleString()}</p>
-              </div>
-              <div className="col-span-2"><label className="text-xs text-purple-300">Service Label</label><select className="w-full bg-purple-900/60 p-2 mt-1 rounded border border-purple-700/50 text-white" value={editFormData.service} onChange={(e) => setEditFormData({...editFormData, service: e.target.value})} required><option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option></select></div>
-              <div className="col-span-2 flex gap-2 mt-4">
-                <button type="submit" className="flex-1 bg-green-600 py-2.5 rounded-lg font-bold hover:bg-green-500 transition-all text-white">✅ Approve & Save</button>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-700 py-2.5 rounded-lg font-bold hover:bg-slate-600 transition-all text-white">Cancel</button>
-              </div>
-            </form>
+        <form onSubmit={handleUpdate} className="grid grid-cols-2 gap-4 text-sm">
+          
+          <div className="col-span-2">
+            <p className="text-xs text-purple-400/70 mt-1">
+              Vendor Baaki: Rs {Math.max(0, Number(editFormData.buying_rate || 0) - Number(editFormData.vendor_paid || 0))}
+            </p>
           </div>
-        </div>
+
+          <div className="col-span-2">
+            <label className="text-xs text-purple-300">Service Label</label>
+            <select className="w-full bg-purple-900/60 p-2 mt-1 rounded text-white font-mono">
+              <option value="">Select Service</option>
+            </select>
+          </div>
+
+          <div className="col-span-2 flex gap-2 mt-4">
+            <button type="submit" className="flex-1 bg-green-600 py-2.5 rounded-lg font-bold hover:bg-green-500 transition-all">Submit</button>
+            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-700 py-2.5 rounded-lg font-bold">Cancel</button>
+          </div>
+
+        </form>
       </div>
-      );
-      export default App;
+    </div>
+      )}
+    </div>
+  );
+}
