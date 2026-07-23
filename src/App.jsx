@@ -941,7 +941,6 @@ export default function App() {
                 <button type="button" onClick={() => { setActiveTab(returnTab || 'dashboard'); setLabelData(null); }} className="flex-1 bg-gray-300 text-black py-2 font-bold hover:bg-gray-400 rounded">Back</button>
               </div>
             </div>
-            )}
           </div>
         )}
 
