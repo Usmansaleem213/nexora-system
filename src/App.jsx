@@ -926,23 +926,21 @@ export default function App() {
               </form>
             ) : (
               <div className="max-w-md mx-auto bg-white text-black p-6 rounded-lg border-4 border-black shadow-2xl">
-                <h1 className="text-2xl font-black">UT INTERNATIONAL LOGISTICS</h1>
-                <p className="text-xl font-black my-3 border-y-2 border-black py-2 text-center text-purple-900">
-  {labelData?.UtinternationalTracking || 
-   labelData?.ut_international_tracking || 
-   labelData?.awb || 
-   labelData?.tracking_number || 
-   labelData?.id || 
-   "UT-385554928"}
-</p>
-                <p><strong>To:</strong> {labelData.receiver_name}</p>
-                <p><strong>Dest:</strong> {labelData.destination}</p>
-                <p><strong>Service:</strong> {labelData.service}</p>
-                <div className="flex gap-2 mt-6">
-                  <button type="button" onClick={() => window.print()} className="flex-1 bg-black text-white py-2 font-bold hover:bg-zinc-800">Print</button>
-                  <button type="button" onClick={() => { setActiveTab(returnTab); setLabelData(null); }} className="flex-1 bg-gray-300 py-2 font-bold text-black hover:bg-gray-400">Back</button>
-                </div>
+              <h1 className="text-2xl font-black text-center">UT INTERNATIONAL LOGISTICS</h1>
+              
+              <p className="text-xl font-black my-3 border-y-2 border-black py-2 text-center text-purple-900">
+                {String(labelData?.UtinternationalTracking || labelData?.ut_international_tracking || labelData?.awb || labelData?.tracking_number || labelData?.id || "UT-385554928")}
+              </p>
+
+              <p><strong>To:</strong> {labelData?.receiver_name || labelData?.to || 'N/A'}</p>
+              <p><strong>Dest:</strong> {labelData?.destination || labelData?.dest || 'N/A'}</p>
+              <p><strong>Service:</strong> {labelData?.service || 'N/A'}</p>
+
+              <div className="flex gap-2 mt-6">
+                <button type="button" onClick={() => window.print()} className="flex-1 bg-black text-white py-2 font-bold hover:bg-gray-800 rounded">Print</button>
+                <button type="button" onClick={() => { setActiveTab(returnTab || 'dashboard'); setLabelData(null); }} className="flex-1 bg-gray-300 text-black py-2 font-bold hover:bg-gray-400 rounded">Back</button>
               </div>
+            </div>
             )}
           </div>
         )}
