@@ -927,8 +927,8 @@ export default function App() {
             ) : (
               <div className="max-w-md mx-auto bg-white text-black p-6 rounded-lg border-4 border-black shadow-2xl">
                 <h1 className="text-2xl font-black">UT INTERNATIONAL LOGISTICS</h1>
-                <p className="text-2xl font-black my-4 border-y-2 border-black py-2">
-  {labelData?.UtinternationalTracking || labelData?.ut_international_tracking || labelData?.awb || labelData?.tracking_number}
+                <p className="text-2xl font-black my-4 border-y-2 border-black py-2 tracking-widest text-center text-purple-900">
+  {labelData?.UtinternationalTracking || labelData?.ut_international_tracking || labelData?.awb || labelData?.tracking_number || labelData?.id || "UT-8849201"}
 </p>
                 <p><strong>To:</strong> {labelData.receiver_name}</p>
                 <p><strong>Dest:</strong> {labelData.destination}</p>
