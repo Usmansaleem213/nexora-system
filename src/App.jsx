@@ -927,7 +927,9 @@ export default function App() {
             ) : (
               <div className="max-w-md mx-auto bg-white text-black p-6 rounded-lg border-4 border-black shadow-2xl">
                 <h1 className="text-2xl font-black">UT INTERNATIONAL LOGISTICS</h1>
-                <p className="text-3xl font-black my-4 border-y-2 border-black py-2">{labelData.UtinternationalTracking}</p>
+                <p className="text-2xl font-black my-4 border-y-2 border-black py-2">
+  {labelData?.UtinternationalTracking || labelData?.ut_international_tracking || labelData?.awb || labelData?.tracking_number}
+</p>
                 <p><strong>To:</strong> {labelData.receiver_name}</p>
                 <p><strong>Dest:</strong> {labelData.destination}</p>
                 <p><strong>Service:</strong> {labelData.service}</p>
@@ -1289,34 +1291,99 @@ export default function App() {
 
       </div>
 
-      {/* EDIT MODAL */}
+      {{/* EDIT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-purple-950/90 p-6 rounded-xl border border-purple-700/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        <form onSubmit={handleUpdate} className="grid grid-cols-2 gap-4 text-sm">
-          
-          <div className="col-span-2">
-            <p className="text-xs text-purple-400/70 mt-1">
-              Vendor Baaki: Rs {Math.max(0, Number(editFormData.buying_rate || 0) - Number(editFormData.vendor_paid || 0))}
-            </p>
-          </div>
+          <div className="bg-purple-950/90 border border-purple-700/50 p-6 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4 border-b border-purple-800 pb-2">
+              <h3 className="text-lg font-bold text-white">Edit Shipment</h3>
+              <p className="text-xs text-purple-400">
+                Vendor Baaki: Rs {Math.max(0, Number(editFormData?.buying_rate || 0) - Number(editFormData?.vendor_paid || 0))}
+              </p>
+            </div>
 
-          <div className="col-span-2">
-            <label className="text-xs text-purple-300">Service Label</label>
-            <select className="w-full bg-purple-900/60 p-2 mt-1 rounded text-white font-mono">
-              <option value="">Select Service</option>
-            </select>
-          </div>
+            <form onSubmit={handleUpdate} className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <label className="text-xs text-purple-300 block mb-1">Service Label</label>
+                <select 
+                  className="w-full bg-purple-900/60 p-2 rounded border border-purple-700/50 text-white font-mono"
+                  value={editFormData?.service || ''} 
+                  onChange={(e) => setEditFormData({...editFormData, service: e.target.value})}
+                >
+                  <option value="">Select Service</option>
+                  <option value="DHL">DHL</option>
+                  <option value="FedEx">FedEx</option>
+                  <option value="UPS">UPS</option>
+                  <option value="Skynet">Skynet</option>
+                  <option value="Aramex">Aramex</option>
+                  <option value="TCS">TCS</option>
+                </select>
+              </div>
 
-          <div className="col-span-2 flex gap-2 mt-4">
-            <button type="submit" className="flex-1 bg-green-600 py-2.5 rounded-lg font-bold hover:bg-green-500 transition-all">Submit</button>
-            <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-slate-700 py-2.5 rounded-lg font-bold">Cancel</button>
-          </div>
+              <div>
+                <label className="text-xs text-purple-300 block mb-1">Forwarding AWB</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-purple-900/60 p-2 rounded border border-purple-700/50 text-white font-mono"
+                  value={editFormData?.forwarding_awb || editFormData?.forwardingAwb || ''} 
+                  onChange={(e) => setEditFormData({...editFormData, forwarding_awb: e.target.value, forwardingAwb: e.target.value})} 
+                  placeholder="Forwarding AWB" 
+                />
+              </div>
 
-        </form>
-      </div>
-    </div>
+              <div>
+                <label className="text-xs text-purple-300 block mb-1">Receiver Name</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-purple-900/60 p-2 rounded border border-purple-700/50 text-white font-mono"
+                  value={editFormData?.receiver_name || ''} 
+                  onChange={(e) => setEditFormData({...editFormData, receiver_name: e.target.value})} 
+                  placeholder="Receiver Name" 
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-purple-300 block mb-1">Destination</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-purple-900/60 p-2 rounded border border-purple-700/50 text-white font-mono"
+                  value={editFormData?.destination || ''} 
+                  onChange={(e) => setEditFormData({...editFormData, destination: e.target.value})} 
+                  placeholder="Destination" 
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-purple-300 block mb-1">Weight (KG)</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-purple-900/60 p-2 rounded border border-purple-700/50 text-white font-mono"
+                  value={editFormData?.weight || ''} 
+                  onChange={(e) => setEditFormData({...editFormData, weight: e.target.value})} 
+                  placeholder="Weight" 
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-purple-300 block mb-1">Debit / Amount (Rs)</label>
+                <input 
+                  type="number" 
+                  className="w-full bg-purple-900/60 p-2 rounded border border-purple-700/50 text-white font-mono"
+                  value={editFormData?.debit || ''} 
+                  onChange={(e) => setEditFormData({...editFormData, debit: e.target.value})} 
+                  placeholder="Debit Amount" 
+                />
+              </div>
+
+              <div className="col-span-2 flex gap-2 mt-4">
+                <button type="submit" className="flex-1 bg-green-600 hover:bg-green-500 py-2.5 rounded-lg font-bold transition-all text-white">
+                  Submit
+                </button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-700 hover:bg-gray-600 py-2.5 rounded-lg font-bold transition-all text-white">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
-    </div>
-  );
-}
