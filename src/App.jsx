@@ -751,7 +751,16 @@ export default function App() {
                         <td className="py-3.5 px-2 text-purple-200">{cust.phone}</td>
                         <td className="py-3.5 px-2 text-purple-200">{cust.email}</td>
                         <td className="py-3.5 px-2 font-mono"><span className="bg-purple-900/60 px-2 py-0.5 rounded text-green-400 font-bold">{cust.totalShipments}</span></td>
-                        <td className="py-3.5 px-2 text-center"><button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-purple-600/20 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-purple-600 hover:text-white transition-all">View Ledger</button></td>
+                        <td className="py-3.5 px-2 text-center flex gap-2 justify-center">
+  <button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-purple-600/20 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-purple-600 hover:text-white transition-all">View Ledger</button>
+  <button type="button" onClick={async () => {
+    if (window.confirm(`"${cust.name}" ki sari shipments bhi delete ho jayengi! Confirm karo?`)) {
+      await supabase.from('customer_ledgers').delete().eq('sender_name', cust.name);
+      fetchLedger();
+      fetchPending();
+    }
+  }} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-600 hover:text-white transition-all">🗑️ Del</button>
+</td>
                       </tr>
                     ))}
                   </tbody>
