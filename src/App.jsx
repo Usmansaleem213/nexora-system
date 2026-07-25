@@ -769,6 +769,7 @@ await supabase.from('profiles').delete().eq('full_name', cust.name);
       fetchLedger();
 fetchPending();
 fetchProfiles();
+setSelectedCustomer(null);
     }
   }} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-600 hover:text-white transition-all">🗑️ Del</button>
 </td>
