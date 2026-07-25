@@ -755,7 +755,17 @@ export default function App() {
   <button type="button" onClick={() => setSelectedCustomer(cust.name)} className="bg-purple-600/20 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-purple-600 hover:text-white transition-all">View Ledger</button>
   <button type="button" onClick={async () => {
     if (window.confirm(`"${cust.name}" ki sari shipments bhi delete ho jayengi! Confirm karo?`)) {
-      await supabase.from('customer_ledgers').delete().eq('sender_name', cust.name);
+      const { data: shipments } = await supabase
+  .from('customer_ledgers')
+  .select('nexora_airwaybill')
+  .eq('sender_name', cust.name);
+if (shipments && shipments.length > 0) {
+  for (const s of shipments) {
+    await supabase.from('tracking_updates').delete().eq('awb', s.nexora_airwaybill);
+  }
+}
+await supabase.from('customer_ledgers').delete().eq('sender_name', cust.name);
+await supabase.from('profiles').delete().eq('full_name', cust.name);
       fetchLedger();
       fetchPending();
     }
