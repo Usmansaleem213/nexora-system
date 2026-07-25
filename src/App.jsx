@@ -767,7 +767,8 @@ if (shipments && shipments.length > 0) {
 await supabase.from('customer_ledgers').delete().eq('sender_name', cust.name);
 await supabase.from('profiles').delete().eq('full_name', cust.name);
       fetchLedger();
-      fetchPending();
+fetchPending();
+fetchProfiles();
     }
   }} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-md text-xs font-semibold hover:bg-red-600 hover:text-white transition-all">🗑️ Del</button>
 </td>
