@@ -687,7 +687,7 @@ export default function App() {
                   <input className="bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Weight (kg)" value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} />
                   <select className="col-span-2 bg-purple-900/60 p-2.5 rounded border border-purple-700/50 focus:outline-none focus:border-purple-500 text-sm text-purple-200" value={formData.service} onChange={(e) => setFormData({...formData, service: e.target.value})} required>
                     <option value="">Select Service</option>
-                    <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
+                    <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="USPS">USPS</option><option value="Other">Other</option>
                   </select>
                 </div>
                 <button type="submit" className="w-full mt-6 py-3 rounded-lg font-bold transition-all text-sm uppercase tracking-wider text-white" style={{background:'linear-gradient(135deg, #7c3aed, #6d28d9)'}}>Generate Label</button>
