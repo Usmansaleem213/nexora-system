@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+@media print {
+  body * { visibility: hidden; }
+  #shipping-label, #shipping-label * { visibility: visible; }
+  #shipping-label { position: absolute; top: 0; left: 0; width: 4in; box-shadow: none !important; }
+}
