@@ -3,6 +3,25 @@ import { supabase } from './supabaseClient';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
+// Deterministic pseudo-barcode bars generated from the tracking code, so the
+// same AWB always renders the same pattern (visual only, not a real symbology).
+const barcodeBars = (text) => {
+  const code = String(text || 'UT000000000');
+  let seed = 0;
+  for (let i = 0; i < code.length; i++) seed = (seed * 31 + code.charCodeAt(i)) >>> 0;
+  const bars = [];
+  for (let i = 0; i < 58; i++) {
+    seed = (seed * 1103515245 + 12345) >>> 0;
+    bars.push(((seed >>> 16) % 4) + 1);
+  }
+  return bars;
+};
+
+const SERVICE_COLORS = {
+  DHL: '#D4A017', FedEx: '#4D148C', UPS: '#5C3B14', Skynet: '#0F6E4F',
+  Aramex: '#C6262E', TCS: '#8B2E4B', Other: '#1E1147'
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -194,7 +213,13 @@ export default function App() {
   };
 
   const handleViewLabel = (item, fromTab) => {
-    setLabelData({ nexoraTracking: item.nexora_airwaybill, receiver_name: item.receiver, destination: item.destination, service: item.service });
+    setLabelData({
+      nexoraTracking: item.nexora_airwaybill,
+      sender_name: item.sender_name, sender_address: item.sender_address, sender_phone: item.sender_phone,
+      receiver_name: item.receiver, receiver_address: item.receiver_address, receiver_phone: item.receiver_phone,
+      destination: item.destination, weight: item.weight, service: item.service,
+      shipment_date: item.created_at, forwarding_awb: item.forwarding_awb
+    });
     setReturnTab(fromTab); setActiveTab('new_shipment');
   };
 
@@ -693,15 +718,78 @@ export default function App() {
                 <button type="submit" className="w-full mt-6 py-3 rounded-lg font-bold transition-all text-sm uppercase tracking-wider text-white" style={{background:'linear-gradient(135deg, #7c3aed, #6d28d9)'}}>Generate Label</button>
               </form>
             ) : (
-              <div className="max-w-md mx-auto bg-white text-black p-6 rounded-lg border-4 border-black shadow-2xl">
-                <h1 className="text-2xl font-black">UT INTERNATIONAL LOGISTICS</h1>
-                <p className="text-3xl font-black my-4 border-y-2 border-black py-2">{labelData.nexoraTracking}</p>
-                <p><strong>To:</strong> {labelData.receiver_name}</p>
-                <p><strong>Dest:</strong> {labelData.destination}</p>
-                <p><strong>Service:</strong> {labelData.service}</p>
-                <div className="flex gap-2 mt-6">
-                  <button type="button" onClick={() => window.print()} className="flex-1 bg-black text-white py-2 font-bold hover:bg-zinc-800">Print</button>
-                  <button type="button" onClick={() => { setActiveTab(returnTab); setLabelData(null); }} className="flex-1 bg-gray-300 py-2 font-bold text-black hover:bg-gray-400">Back</button>
+              <div className="max-w-sm mx-auto">
+                {/* Tag punch-hole + hanger notch, like a physical shipping tag */}
+                <div className="flex justify-center">
+                  <div className="w-10 h-5 bg-purple-950 rounded-t-full flex items-start justify-center pt-1">
+                    <div className="w-3 h-3 rounded-full bg-purple-950 border-2 border-white/30" />
+                  </div>
+                </div>
+                <div id="shipping-label" className="bg-white text-[#0A0A0A] rounded-b-sm rounded-tr-sm overflow-hidden shadow-2xl" style={{fontFamily:'ui-sans-serif, system-ui, sans-serif'}}>
+
+                  {/* Brand band */}
+                  <div className="px-5 py-3 flex items-center justify-between" style={{background:'#1E1147'}}>
+                    <div>
+                      <p className="text-white font-black tracking-tight leading-none" style={{fontSize:'17px'}}>UT INTERNATIONAL</p>
+                      <p className="text-white/60 text-[10px] tracking-wide leading-none mt-1">Global Logistics Control</p>
+                    </div>
+                    <div className="px-2.5 py-1 rounded-sm text-white text-[11px] font-bold" style={{background: SERVICE_COLORS[labelData.service] || '#1E1147', border:'1px solid rgba(255,255,255,0.25)'}}>
+                      {(labelData.service || 'STANDARD').toUpperCase()}
+                    </div>
+                  </div>
+
+                  {/* Customs-style rotated seal, ties to international trade */}
+                  <div className="relative">
+                    <div className="absolute right-4 top-3 rotate-[-10deg] border-2 border-[#C6262E] text-[#C6262E] text-[10px] font-black tracking-widest px-2 py-1 opacity-70 select-none">
+                      INTL SHIPMENT
+                    </div>
+
+                    <div className="px-5 pt-4 pb-3 border-b border-dashed border-gray-300">
+                      <p className="text-[10px] font-bold text-gray-400 tracking-wide">FROM</p>
+                      <p className="font-bold text-sm mt-0.5">{labelData.sender_name || '—'}</p>
+                      {labelData.sender_address && <p className="text-xs text-gray-600 leading-snug mt-0.5 max-w-[70%]">{labelData.sender_address}</p>}
+                      {labelData.sender_phone && <p className="text-xs text-gray-600 mt-0.5">{labelData.sender_phone}</p>}
+                    </div>
+
+                    <div className="px-5 pt-4 pb-4">
+                      <p className="text-[10px] font-bold text-gray-400 tracking-wide">SHIP TO</p>
+                      <p className="font-black text-xl leading-tight mt-1">{labelData.receiver_name}</p>
+                      {labelData.receiver_address && <p className="text-sm text-gray-700 leading-snug mt-1">{labelData.receiver_address}</p>}
+                      <p className="text-sm text-gray-700 mt-1">{labelData.destination}</p>
+                      {labelData.receiver_phone && <p className="text-sm text-gray-700 mt-0.5">{labelData.receiver_phone}</p>}
+                    </div>
+                  </div>
+
+                  {/* Meta strip */}
+                  <div className="grid grid-cols-3 divide-x divide-gray-200 border-y border-gray-200 bg-gray-50 text-center py-2">
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold">WEIGHT</p>
+                      <p className="text-sm font-bold">{labelData.weight ? `${labelData.weight} kg` : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold">SHIP DATE</p>
+                      <p className="text-sm font-bold">{labelData.shipment_date ? new Date(labelData.shipment_date).toLocaleDateString('en-PK', { day: '2-digit', month: 'short' }) : todayStr()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold">ROUTE</p>
+                      <p className="text-sm font-bold truncate px-1">{labelData.forwarding_awb ? labelData.service : 'Direct'}</p>
+                    </div>
+                  </div>
+
+                  {/* Barcode block */}
+                  <div className="px-5 py-4 flex flex-col items-center">
+                    <div className="flex items-stretch h-14 w-full justify-center gap-[1.5px]">
+                      {barcodeBars(labelData.nexoraTracking).map((w, i) => (
+                        <div key={i} style={{ width: `${w}px`, background: '#0A0A0A' }} />
+                      ))}
+                    </div>
+                    <p className="font-mono font-bold tracking-[0.15em] text-base mt-2">{labelData.nexoraTracking}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-4">
+                  <button type="button" onClick={() => window.print()} className="flex-1 bg-purple-700 text-white py-2.5 rounded-lg font-bold hover:bg-purple-600 transition-all">🖨️ Print Label</button>
+                  <button type="button" onClick={() => { setActiveTab(returnTab); setLabelData(null); }} className="flex-1 bg-purple-900/60 border border-purple-700/50 py-2.5 rounded-lg font-bold text-white hover:bg-purple-800/60 transition-all">Back</button>
                 </div>
               </div>
             )}
