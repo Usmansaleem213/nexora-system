@@ -64,10 +64,10 @@ export default function App() {
   const [showAddVendor, setShowAddVendor] = useState(false);
 
   const [rates, setRates] = useState([]);
-  const [rateForm, setRateForm] = useState({ service: 'DHL', destination: '', per_kg_rate: '', min_charge: '' });
+  const [rateForm, setRateForm] = useState({ service: 'DHL', destination: '', slabs: [{ weight: '0.5', price: '' }, { weight: '1', price: '' }], extra_per_kg: '' });
   const [rateMsg, setRateMsg] = useState('');
   const [editRateId, setEditRateId] = useState(null);
-  const [editRateForm, setEditRateForm] = useState({ service: 'DHL', destination: '', per_kg_rate: '', min_charge: '' });
+  const [editRateForm, setEditRateForm] = useState({ service: 'DHL', destination: '', slabs: [], extra_per_kg: '' });
   const [showAddRate, setShowAddRate] = useState(false);
 
   const fetchLedger = async () => {
@@ -93,28 +93,55 @@ export default function App() {
 
   const handleAddRate = async (e) => {
     e.preventDefault();
+    const cleanSlabs = rateForm.slabs
+      .filter(s => s.weight !== '' && s.price !== '')
+      .map(s => ({ weight: Number(s.weight), price: Number(s.price) }))
+      .sort((a, b) => a.weight - b.weight);
     const { error } = await supabase.from('vendor_rates').insert([{
       service: rateForm.service, destination: rateForm.destination.trim(),
-      per_kg_rate: Number(rateForm.per_kg_rate), min_charge: Number(rateForm.min_charge || 0)
+      weight_slabs: cleanSlabs, extra_per_kg: Number(rateForm.extra_per_kg || 0)
     }]);
     if (!error) {
       setRateMsg('✅ Rate add ho gaya!');
-      setRateForm({ service: 'DHL', destination: '', per_kg_rate: '', min_charge: '' });
+      setRateForm({ service: 'DHL', destination: '', slabs: [{ weight: '0.5', price: '' }, { weight: '1', price: '' }], extra_per_kg: '' });
       setShowAddRate(false); fetchRates();
       setTimeout(() => setRateMsg(''), 3000);
     } else { setRateMsg('❌ Error: ' + error.message); }
   };
-  const handleEditRate = (r) => { setEditRateId(r.id); setEditRateForm({ service: r.service, destination: r.destination, per_kg_rate: r.per_kg_rate, min_charge: r.min_charge || 0 }); };
+  const handleEditRate = (r) => {
+    setEditRateId(r.id);
+    setEditRateForm({
+      service: r.service, destination: r.destination,
+      slabs: (r.weight_slabs && r.weight_slabs.length > 0 ? r.weight_slabs : [{ weight: 0.5, price: '' }]).map(s => ({ weight: String(s.weight), price: String(s.price) })),
+      extra_per_kg: r.extra_per_kg || 0
+    });
+  };
   const handleUpdateRate = async (e) => {
     e.preventDefault();
+    const cleanSlabs = editRateForm.slabs
+      .filter(s => s.weight !== '' && s.price !== '')
+      .map(s => ({ weight: Number(s.weight), price: Number(s.price) }))
+      .sort((a, b) => a.weight - b.weight);
     const { error } = await supabase.from('vendor_rates').update({
       service: editRateForm.service, destination: editRateForm.destination.trim(),
-      per_kg_rate: Number(editRateForm.per_kg_rate), min_charge: Number(editRateForm.min_charge || 0)
+      weight_slabs: cleanSlabs, extra_per_kg: Number(editRateForm.extra_per_kg || 0)
     }).eq('id', editRateId);
     if (!error) { setEditRateId(null); fetchRates(); } else alert('Update failed: ' + error.message);
   };
   const handleDeleteRate = async (id) => {
     if (window.confirm('Ye rate delete karein?')) { await supabase.from('vendor_rates').delete().eq('id', id); fetchRates(); }
+  };
+  const addSlabRow = (which) => {
+    if (which === 'new') setRateForm(f => ({ ...f, slabs: [...f.slabs, { weight: '', price: '' }] }));
+    else setEditRateForm(f => ({ ...f, slabs: [...f.slabs, { weight: '', price: '' }] }));
+  };
+  const removeSlabRow = (which, idx) => {
+    if (which === 'new') setRateForm(f => ({ ...f, slabs: f.slabs.filter((_, i) => i !== idx) }));
+    else setEditRateForm(f => ({ ...f, slabs: f.slabs.filter((_, i) => i !== idx) }));
+  };
+  const updateSlabRow = (which, idx, field, value) => {
+    if (which === 'new') setRateForm(f => ({ ...f, slabs: f.slabs.map((s, i) => i === idx ? { ...s, [field]: value } : s) }));
+    else setEditRateForm(f => ({ ...f, slabs: f.slabs.map((s, i) => i === idx ? { ...s, [field]: value } : s) }));
   };
 
   const handleAddVendor = async (e) => {
@@ -1087,27 +1114,42 @@ setSelectedCustomer(null);
               </div>
 
               {showAddRate && (
-                <form onSubmit={handleAddRate} className="bg-purple-900/50 rounded-xl p-4 mb-4 grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-purple-300 block mb-1">Service / Vendor *</label>
-                    <select className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2.5 text-white text-sm" value={rateForm.service} onChange={(e) => setRateForm({...rateForm, service: e.target.value})} required>
-                      <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
-                    </select>
+                <form onSubmit={handleAddRate} className="bg-purple-900/50 rounded-xl p-4 mb-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-purple-300 block mb-1">Service / Vendor *</label>
+                      <select className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2.5 text-white text-sm" value={rateForm.service} onChange={(e) => setRateForm({...rateForm, service: e.target.value})} required>
+                        <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-purple-300 block mb-1">Destination *</label>
+                      <input className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2.5 text-white text-sm" placeholder="e.g. United States of America" value={rateForm.destination} onChange={(e) => setRateForm({...rateForm, destination: e.target.value})} required />
+                    </div>
                   </div>
+
                   <div>
-                    <label className="text-xs text-purple-300 block mb-1">Destination *</label>
-                    <input className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2.5 text-white text-sm" placeholder="e.g. United States of America" value={rateForm.destination} onChange={(e) => setRateForm({...rateForm, destination: e.target.value})} required />
+                    <label className="text-xs text-purple-300 block mb-2">Weight Slabs (kg → price)</label>
+                    <div className="space-y-2">
+                      {rateForm.slabs.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <input type="number" step="0.1" className="w-24 bg-purple-900/60 border border-purple-700/50 rounded-lg p-2 text-white text-sm" placeholder="0.5" value={s.weight} onChange={(e) => updateSlabRow('new', i, 'weight', e.target.value)} />
+                          <span className="text-purple-400 text-xs">kg =</span>
+                          <input type="number" className="flex-1 bg-purple-900/60 border border-green-500/50 rounded-lg p-2 text-white text-sm" placeholder="Rs price" value={s.price} onChange={(e) => updateSlabRow('new', i, 'price', e.target.value)} />
+                          <button type="button" onClick={() => removeSlabRow('new', i)} className="text-red-400 hover:text-red-300 text-xs font-bold px-2">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" onClick={() => addSlabRow('new')} className="mt-2 text-xs text-amber-400 hover:text-amber-300 font-bold">➕ Aur weight slab add karein</button>
                   </div>
+
                   <div>
-                    <label className="text-xs text-green-400 font-bold block mb-1">Per KG Rate (Rs) *</label>
-                    <input type="number" className="w-full bg-purple-900/60 border border-green-500/50 rounded-lg p-2.5 text-white text-sm" placeholder="e.g. 2200" value={rateForm.per_kg_rate} onChange={(e) => setRateForm({...rateForm, per_kg_rate: e.target.value})} required />
+                    <label className="text-xs text-amber-400 font-bold block mb-1">Extra Rate Per KG (sabse badi slab ke baad)</label>
+                    <input type="number" className="w-full bg-purple-900/60 border border-amber-500/50 rounded-lg p-2.5 text-white text-sm" placeholder="e.g. 2000" value={rateForm.extra_per_kg} onChange={(e) => setRateForm({...rateForm, extra_per_kg: e.target.value})} />
                   </div>
-                  <div>
-                    <label className="text-xs text-amber-400 font-bold block mb-1">Minimum Charge (Rs)</label>
-                    <input type="number" className="w-full bg-purple-900/60 border border-amber-500/50 rounded-lg p-2.5 text-white text-sm" placeholder="e.g. 3000" value={rateForm.min_charge} onChange={(e) => setRateForm({...rateForm, min_charge: e.target.value})} />
-                  </div>
-                  {rateMsg && <div className={`col-span-2 text-xs p-3 rounded-lg ${rateMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>{rateMsg}</div>}
-                  <button type="submit" className="col-span-2 bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-lg transition-all">✅ Rate Save Karo</button>
+
+                  {rateMsg && <div className={`text-xs p-3 rounded-lg ${rateMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>{rateMsg}</div>}
+                  <button type="submit" className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-lg transition-all">✅ Rate Save Karo</button>
                 </form>
               )}
 
@@ -1120,29 +1162,52 @@ setSelectedCustomer(null);
                     return (
                       <div key={r.id} className="bg-purple-900/40 border border-purple-700/50 rounded-xl p-4">
                         {!isEditing ? (
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <span className="bg-purple-800/60 px-2 py-1 rounded text-xs font-bold text-blue-300">{r.service}</span>
-                              <p className="font-bold text-white">{r.destination}</p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <p className="text-sm font-black text-green-400">Rs {Number(r.per_kg_rate).toLocaleString()}/kg</p>
-                                {Number(r.min_charge || 0) > 0 && <p className="text-[11px] text-amber-400/80">Min Rs {Number(r.min_charge).toLocaleString()}</p>}
+                          <div>
+                            <div className="flex items-center justify-between gap-3 mb-2">
+                              <div className="flex items-center gap-3">
+                                <span className="bg-purple-800/60 px-2 py-1 rounded text-xs font-bold text-blue-300">{r.service}</span>
+                                <p className="font-bold text-white">{r.destination}</p>
                               </div>
-                              <button type="button" onClick={() => handleEditRate(r)} className="text-yellow-400 hover:text-yellow-300 text-xs font-bold px-2 py-1 rounded hover:bg-yellow-900/20 transition-all">✏️</button>
-                              <button type="button" onClick={() => handleDeleteRate(r.id)} className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all">🗑️</button>
+                              <div className="flex items-center gap-3">
+                                <button type="button" onClick={() => handleEditRate(r)} className="text-yellow-400 hover:text-yellow-300 text-xs font-bold px-2 py-1 rounded hover:bg-yellow-900/20 transition-all">✏️</button>
+                                <button type="button" onClick={() => handleDeleteRate(r.id)} className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all">🗑️</button>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {(r.weight_slabs || []).map((s, i) => (
+                                <span key={i} className="bg-purple-950/60 border border-purple-700/40 rounded px-2 py-1 text-xs">
+                                  <span className="text-purple-300">{s.weight}kg</span> <span className="text-green-400 font-bold">Rs {Number(s.price).toLocaleString()}</span>
+                                </span>
+                              ))}
+                              {Number(r.extra_per_kg || 0) > 0 && (
+                                <span className="bg-amber-900/20 border border-amber-500/30 rounded px-2 py-1 text-xs text-amber-400">+Rs {Number(r.extra_per_kg).toLocaleString()}/kg after</span>
+                              )}
                             </div>
                           </div>
                         ) : (
-                          <form onSubmit={handleUpdateRate} className="grid grid-cols-2 gap-3">
-                            <select className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2 text-white text-sm" value={editRateForm.service} onChange={(e) => setEditRateForm({...editRateForm, service: e.target.value})}>
-                              <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
-                            </select>
-                            <input className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2 text-white text-sm" value={editRateForm.destination} onChange={(e) => setEditRateForm({...editRateForm, destination: e.target.value})} required />
-                            <input type="number" className="w-full bg-purple-900/60 border border-green-500/50 rounded-lg p-2 text-white text-sm" value={editRateForm.per_kg_rate} onChange={(e) => setEditRateForm({...editRateForm, per_kg_rate: e.target.value})} required />
-                            <input type="number" className="w-full bg-purple-900/60 border border-amber-500/50 rounded-lg p-2 text-white text-sm" value={editRateForm.min_charge} onChange={(e) => setEditRateForm({...editRateForm, min_charge: e.target.value})} />
-                            <div className="col-span-2 flex gap-2">
+                          <form onSubmit={handleUpdateRate} className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <select className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2 text-white text-sm" value={editRateForm.service} onChange={(e) => setEditRateForm({...editRateForm, service: e.target.value})}>
+                                <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
+                              </select>
+                              <input className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2 text-white text-sm" value={editRateForm.destination} onChange={(e) => setEditRateForm({...editRateForm, destination: e.target.value})} required />
+                            </div>
+                            <div className="space-y-2">
+                              {editRateForm.slabs.map((s, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                  <input type="number" step="0.1" className="w-24 bg-purple-900/60 border border-purple-700/50 rounded-lg p-2 text-white text-sm" value={s.weight} onChange={(e) => updateSlabRow('edit', i, 'weight', e.target.value)} />
+                                  <span className="text-purple-400 text-xs">kg =</span>
+                                  <input type="number" className="flex-1 bg-purple-900/60 border border-green-500/50 rounded-lg p-2 text-white text-sm" value={s.price} onChange={(e) => updateSlabRow('edit', i, 'price', e.target.value)} />
+                                  <button type="button" onClick={() => removeSlabRow('edit', i)} className="text-red-400 hover:text-red-300 text-xs font-bold px-2">✕</button>
+                                </div>
+                              ))}
+                              <button type="button" onClick={() => addSlabRow('edit')} className="text-xs text-amber-400 hover:text-amber-300 font-bold">➕ Aur weight slab add karein</button>
+                            </div>
+                            <div>
+                              <label className="text-xs text-amber-400 font-bold block mb-1">Extra Rate Per KG (sabse badi slab ke baad)</label>
+                              <input type="number" className="w-full bg-purple-900/60 border border-amber-500/50 rounded-lg p-2 text-white text-sm" value={editRateForm.extra_per_kg} onChange={(e) => setEditRateForm({...editRateForm, extra_per_kg: e.target.value})} />
+                            </div>
+                            <div className="flex gap-2">
                               <button type="submit" className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-all text-sm">✅ Save</button>
                               <button type="button" onClick={() => setEditRateId(null)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg transition-all text-sm">Cancel</button>
                             </div>
