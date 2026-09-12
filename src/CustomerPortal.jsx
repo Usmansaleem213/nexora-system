@@ -9,6 +9,7 @@ export default function CustomerPortal({ session, onLogout }) {
     receiver_name: '', receiver_address: '', receiver_phone: '',
     receiver_email: '', destination: '', weight: '', service: '', notes: ''
   });
+  const [rates, setRates] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [generatedLabel, setGeneratedLabel] = useState(null);
   const labelRef = useRef(null);
@@ -18,7 +19,23 @@ export default function CustomerPortal({ session, onLogout }) {
 
   useEffect(() => {
     fetchMyShipments();
+    fetchRates();
   }, []);
+
+  const fetchRates = async () => {
+    const { data } = await supabase.from('vendor_rates').select('*');
+    if (data) setRates(data);
+  };
+
+  // Live estimate: matches the selected service + destination against the rate chart.
+  const matchedRate = rates.find(r =>
+    r.service === formData.service &&
+    r.destination.trim().toLowerCase() === formData.destination.trim().toLowerCase()
+  );
+  const estimatedCost = matchedRate && Number(formData.weight) > 0
+    ? Math.max(Number(matchedRate.min_charge || 0), Number(matchedRate.per_kg_rate) * Number(formData.weight))
+    : null;
+  const destinationOptions = [...new Set(rates.map(r => r.destination))];
 
   const fetchMyShipments = async () => {
     setLoading(true);
@@ -216,8 +233,11 @@ export default function CustomerPortal({ session, onLogout }) {
                       <div>
                         <label className="text-xs text-purple-300">Destination Country *</label>
                         <input className="w-full mt-1 bg-purple-900/60 border border-purple-700/50 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-purple-500"
-                          placeholder="United Kingdom" value={formData.destination}
+                          placeholder="United Kingdom" value={formData.destination} list="destination-options"
                           onChange={(e) => setFormData({...formData, destination: e.target.value})} required />
+                        <datalist id="destination-options">
+                          {destinationOptions.map((d, i) => <option key={i} value={d} />)}
+                        </datalist>
                       </div>
                       <div>
                         <label className="text-xs text-purple-300">Weight (kg) *</label>
@@ -250,6 +270,24 @@ export default function CustomerPortal({ session, onLogout }) {
               </select>
             </div>
                     </div>
+
+                    {/* Live rate estimate — updates as service, destination & weight are filled in */}
+                    {formData.service && formData.destination && Number(formData.weight) > 0 && (
+                      matchedRate ? (
+                        <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-4 flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-emerald-400 font-bold uppercase tracking-wide">Estimated Cost</p>
+                            <p className="text-[11px] text-purple-300/70 mt-0.5">{formData.service} • {formData.destination} • {formData.weight}kg @ Rs {Number(matchedRate.per_kg_rate).toLocaleString()}/kg</p>
+                          </div>
+                          <p className="text-2xl font-black text-emerald-400">Rs {estimatedCost.toLocaleString()}</p>
+                        </div>
+                      ) : (
+                        <div className="bg-purple-900/40 border border-purple-700/50 rounded-xl p-3 text-xs text-purple-300">
+                          ℹ️ Is route ka fixed rate abhi list mein nahi — humari team booking approve karte waqt aapko sahi price bata degi.
+                        </div>
+                      )
+                    )}
+
                     {submitError && (
                       <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-red-400 text-xs">
                         {submitError}
