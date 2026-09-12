@@ -92,8 +92,13 @@ export default function CustomerPortal({ session, onLogout }) {
       <div className="w-64 bg-purple-950/90 border-r border-purple-800/40 flex flex-col justify-between fixed h-full">
         <div>
           <div className="p-6 border-b border-purple-800/40">
-            <h1 className="text-xl font-black tracking-wider text-purple-500">NEXORA</h1>
-            <p className="text-xs text-purple-300 mt-1">Customer Portal</p>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background: 'linear-gradient(135deg, #7c3aed, #a855f7)'}}>
+                <span className="text-white text-xs font-black">U</span>
+              </div>
+              <h1 className="text-sm font-black tracking-wider" style={{background: 'linear-gradient(90deg, #c084fc, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>UNITED TRADE INTERNATIONAL</h1>
+            </div>
+            <p className="text-xs text-purple-300 ml-10">Customer Portal</p>
           </div>
           <nav className="p-4 space-y-2">
             {[
@@ -330,9 +335,9 @@ export default function CustomerPortal({ session, onLogout }) {
               <button type="button"
                 onClick={() => {
                   const rows = shipments.map((s, i) =>
-                    `${i+1},${s.nexora_airwaybill},${s.receiver},${s.destination},${s.service},${s.debit || 0},${s.credit || 0},${new Date(s.created_at).toLocaleDateString()}`
+                    `${i+1},${s.nexora_airwaybill},${s.receiver},${s.destination},${s.service},${s.remote_status || 'Non-Remote'},${s.remote_charges || 0},${s.debit || 0},${s.credit || 0},${new Date(s.created_at).toLocaleDateString()}`
                   ).join('\n');
-                  const csv = `S.No,AWB,Receiver,Destination,Service,Debit,Credit,Date\n${rows}`;
+                  const csv = `S.No,AWB,Receiver,Destination,Service,Remote Status,Remote Charges,Debit,Credit,Date\n${rows}`;
                   const blob = new Blob([csv], { type: 'text/csv' });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a'); a.href = url; a.download = 'nexora_ledger.csv'; a.click();
@@ -342,7 +347,7 @@ export default function CustomerPortal({ session, onLogout }) {
               </button>
             </div>
             <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 overflow-x-auto">
-              <table className="w-full text-sm text-left min-w-[800px]">
+              <table className="w-full text-sm text-left min-w-[900px]">
                 <thead>
                   <tr className="text-purple-300 border-b border-purple-700/50 text-xs uppercase">
                     <th className="pb-3 px-2">S.No</th>
@@ -351,6 +356,7 @@ export default function CustomerPortal({ session, onLogout }) {
                     <th className="pb-3 px-2">Receiver</th>
                     <th className="pb-3 px-2">Destination</th>
                     <th className="pb-3 px-2">Service</th>
+                    <th className="pb-3 px-2">Remote</th>
                     <th className="pb-3 px-2 text-right">Amount</th>
                     <th className="pb-3 px-2 text-right text-green-400">Paid</th>
                     <th className="pb-3 px-2">Status</th>
@@ -358,9 +364,9 @@ export default function CustomerPortal({ session, onLogout }) {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={9} className="text-center py-8 text-purple-300">Loading...</td></tr>
+                    <tr><td colSpan={10} className="text-center py-8 text-purple-300">Loading...</td></tr>
                   ) : shipments.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center py-8 text-purple-300">No shipments yet</td></tr>
+                    <tr><td colSpan={10} className="text-center py-8 text-purple-300">No shipments yet</td></tr>
                   ) : shipments.map((s, idx) => (
                     <tr key={s.id} className="border-b border-purple-800/40 hover:bg-purple-900/60/30">
                       <td className="py-3 px-2 text-purple-400/70">{shipments.length - idx}</td>
@@ -369,6 +375,16 @@ export default function CustomerPortal({ session, onLogout }) {
                       <td className="py-3 px-2 text-white font-medium">{s.receiver}</td>
                       <td className="py-3 px-2 text-purple-200">{s.destination}</td>
                       <td className="py-3 px-2"><span className="bg-purple-900/60 px-2 py-0.5 rounded text-xs text-blue-300">{s.service}</span></td>
+                      <td className="py-3 px-2">
+                        {s.remote_status === 'Remote' ? (
+                          <div>
+                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-orange-900/40 text-orange-400">Remote</span>
+                            {Number(s.remote_charges || 0) > 0 && <p className="text-[11px] text-orange-300/80 mt-0.5">+Rs {Number(s.remote_charges).toLocaleString()}</p>}
+                          </div>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-xs font-bold bg-purple-900/40 text-purple-300">Non-Remote</span>
+                        )}
+                      </td>
                       <td className="py-3 px-2 text-right font-mono text-yellow-400">Rs {Number(s.debit || 0).toLocaleString()}</td>
                       <td className="py-3 px-2 text-right font-mono text-green-400">Rs {Number(s.credit || 0).toLocaleString()}</td>
                       <td className="py-3 px-2">
