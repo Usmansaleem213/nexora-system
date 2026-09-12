@@ -63,6 +63,13 @@ export default function App() {
   const [editVendorForm, setEditVendorForm] = useState({ name: '', total_due: 0, total_paid: 0, notes: '' });
   const [showAddVendor, setShowAddVendor] = useState(false);
 
+  const [rates, setRates] = useState([]);
+  const [rateForm, setRateForm] = useState({ service: 'DHL', destination: '', per_kg_rate: '', min_charge: '' });
+  const [rateMsg, setRateMsg] = useState('');
+  const [editRateId, setEditRateId] = useState(null);
+  const [editRateForm, setEditRateForm] = useState({ service: 'DHL', destination: '', per_kg_rate: '', min_charge: '' });
+  const [showAddRate, setShowAddRate] = useState(false);
+
   const fetchLedger = async () => {
     const { data } = await supabase.from('customer_ledgers').select('*').not('status', 'eq', 'pending').order('id', { ascending: false });
     if (data) setLedgerData(data);
@@ -78,6 +85,36 @@ export default function App() {
   const fetchVendors = async () => {
     const { data } = await supabase.from('vendors').select('*').order('id', { ascending: false });
     if (data) setVendors(data);
+  };
+  const fetchRates = async () => {
+    const { data } = await supabase.from('vendor_rates').select('*').order('destination', { ascending: true });
+    if (data) setRates(data);
+  };
+
+  const handleAddRate = async (e) => {
+    e.preventDefault();
+    const { error } = await supabase.from('vendor_rates').insert([{
+      service: rateForm.service, destination: rateForm.destination.trim(),
+      per_kg_rate: Number(rateForm.per_kg_rate), min_charge: Number(rateForm.min_charge || 0)
+    }]);
+    if (!error) {
+      setRateMsg('✅ Rate add ho gaya!');
+      setRateForm({ service: 'DHL', destination: '', per_kg_rate: '', min_charge: '' });
+      setShowAddRate(false); fetchRates();
+      setTimeout(() => setRateMsg(''), 3000);
+    } else { setRateMsg('❌ Error: ' + error.message); }
+  };
+  const handleEditRate = (r) => { setEditRateId(r.id); setEditRateForm({ service: r.service, destination: r.destination, per_kg_rate: r.per_kg_rate, min_charge: r.min_charge || 0 }); };
+  const handleUpdateRate = async (e) => {
+    e.preventDefault();
+    const { error } = await supabase.from('vendor_rates').update({
+      service: editRateForm.service, destination: editRateForm.destination.trim(),
+      per_kg_rate: Number(editRateForm.per_kg_rate), min_charge: Number(editRateForm.min_charge || 0)
+    }).eq('id', editRateId);
+    if (!error) { setEditRateId(null); fetchRates(); } else alert('Update failed: ' + error.message);
+  };
+  const handleDeleteRate = async (id) => {
+    if (window.confirm('Ye rate delete karein?')) { await supabase.from('vendor_rates').delete().eq('id', id); fetchRates(); }
   };
 
   const handleAddVendor = async (e) => {
@@ -105,7 +142,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchLedger(); fetchPending(); fetchProfiles(); fetchVendors();
+    fetchLedger(); fetchPending(); fetchProfiles(); fetchVendors(); fetchRates();
     // Auto-refresh every 10 seconds so new customer requests show up without manual page reload
     const interval = setInterval(() => {
       fetchPending();
@@ -370,6 +407,7 @@ export default function App() {
               { id: 'customers', icon: '👥', label: 'Customers / Ledgers', color: 'purple' },
               { id: 'tracking_control', icon: '🗺️', label: 'Tracking Control', color: 'purple' },
               { id: 'vendors', icon: '🏢', label: 'Vendors', color: 'rose' },
+              { id: 'rates', icon: '💰', label: 'Rate Chart', color: 'amber' },
               { id: 'registered', icon: '🆕', label: 'Registered Users', badge: profilesData.length, color: 'purple' },
             ].map(tab => {
               const isActive = activeTab === tab.id;
@@ -1035,6 +1073,89 @@ setSelectedCustomer(null);
             </div>
           );
         })()}
+
+        {/* RATE CHART */}
+        {activeTab === 'rates' && (
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-black text-white mb-2">💰 Vendor Rate Chart</h2>
+            <p className="text-purple-300 text-sm mb-6">Har vendor/service ka per-kg rate — customer portal mein live estimate isi se calculate hota hai.</p>
+
+            <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 mb-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-purple-200">📋 Rate List</h3>
+                <button type="button" onClick={() => setShowAddRate(!showAddRate)} className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-2 rounded-lg transition-all text-sm">{showAddRate ? '✕ Cancel' : '➕ Nayi Rate Add Karo'}</button>
+              </div>
+
+              {showAddRate && (
+                <form onSubmit={handleAddRate} className="bg-purple-900/50 rounded-xl p-4 mb-4 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-purple-300 block mb-1">Service / Vendor *</label>
+                    <select className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2.5 text-white text-sm" value={rateForm.service} onChange={(e) => setRateForm({...rateForm, service: e.target.value})} required>
+                      <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-purple-300 block mb-1">Destination *</label>
+                    <input className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2.5 text-white text-sm" placeholder="e.g. United States of America" value={rateForm.destination} onChange={(e) => setRateForm({...rateForm, destination: e.target.value})} required />
+                  </div>
+                  <div>
+                    <label className="text-xs text-green-400 font-bold block mb-1">Per KG Rate (Rs) *</label>
+                    <input type="number" className="w-full bg-purple-900/60 border border-green-500/50 rounded-lg p-2.5 text-white text-sm" placeholder="e.g. 2200" value={rateForm.per_kg_rate} onChange={(e) => setRateForm({...rateForm, per_kg_rate: e.target.value})} required />
+                  </div>
+                  <div>
+                    <label className="text-xs text-amber-400 font-bold block mb-1">Minimum Charge (Rs)</label>
+                    <input type="number" className="w-full bg-purple-900/60 border border-amber-500/50 rounded-lg p-2.5 text-white text-sm" placeholder="e.g. 3000" value={rateForm.min_charge} onChange={(e) => setRateForm({...rateForm, min_charge: e.target.value})} />
+                  </div>
+                  {rateMsg && <div className={`col-span-2 text-xs p-3 rounded-lg ${rateMsg.startsWith('✅') ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'}`}>{rateMsg}</div>}
+                  <button type="submit" className="col-span-2 bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-lg transition-all">✅ Rate Save Karo</button>
+                </form>
+              )}
+
+              {rates.length === 0 ? (
+                <div className="text-center py-8"><p className="text-3xl mb-2">💰</p><p className="text-purple-300 text-sm">Abhi koi rate add nahi hui</p></div>
+              ) : (
+                <div className="space-y-2">
+                  {rates.map((r) => {
+                    const isEditing = editRateId === r.id;
+                    return (
+                      <div key={r.id} className="bg-purple-900/40 border border-purple-700/50 rounded-xl p-4">
+                        {!isEditing ? (
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <span className="bg-purple-800/60 px-2 py-1 rounded text-xs font-bold text-blue-300">{r.service}</span>
+                              <p className="font-bold text-white">{r.destination}</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <p className="text-sm font-black text-green-400">Rs {Number(r.per_kg_rate).toLocaleString()}/kg</p>
+                                {Number(r.min_charge || 0) > 0 && <p className="text-[11px] text-amber-400/80">Min Rs {Number(r.min_charge).toLocaleString()}</p>}
+                              </div>
+                              <button type="button" onClick={() => handleEditRate(r)} className="text-yellow-400 hover:text-yellow-300 text-xs font-bold px-2 py-1 rounded hover:bg-yellow-900/20 transition-all">✏️</button>
+                              <button type="button" onClick={() => handleDeleteRate(r.id)} className="text-red-400 hover:text-red-300 text-xs font-bold px-2 py-1 rounded hover:bg-red-900/20 transition-all">🗑️</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <form onSubmit={handleUpdateRate} className="grid grid-cols-2 gap-3">
+                            <select className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2 text-white text-sm" value={editRateForm.service} onChange={(e) => setEditRateForm({...editRateForm, service: e.target.value})}>
+                              <option value="DHL">DHL</option><option value="FedEx">FedEx</option><option value="UPS">UPS</option><option value="Skynet">Skynet</option><option value="Aramex">Aramex</option><option value="TCS">TCS</option><option value="Other">Other</option>
+                            </select>
+                            <input className="w-full bg-purple-900/60 border border-purple-700/50 rounded-lg p-2 text-white text-sm" value={editRateForm.destination} onChange={(e) => setEditRateForm({...editRateForm, destination: e.target.value})} required />
+                            <input type="number" className="w-full bg-purple-900/60 border border-green-500/50 rounded-lg p-2 text-white text-sm" value={editRateForm.per_kg_rate} onChange={(e) => setEditRateForm({...editRateForm, per_kg_rate: e.target.value})} required />
+                            <input type="number" className="w-full bg-purple-900/60 border border-amber-500/50 rounded-lg p-2 text-white text-sm" value={editRateForm.min_charge} onChange={(e) => setEditRateForm({...editRateForm, min_charge: e.target.value})} />
+                            <div className="col-span-2 flex gap-2">
+                              <button type="submit" className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg transition-all text-sm">✅ Save</button>
+                              <button type="button" onClick={() => setEditRateId(null)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg transition-all text-sm">Cancel</button>
+                            </div>
+                          </form>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
 
