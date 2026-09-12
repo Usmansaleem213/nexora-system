@@ -332,12 +332,20 @@ export default function CustomerPortal({ session, onLogout }) {
                 <h2 className="text-2xl font-black text-white">My Shipments & Ledger 📑</h2>
                 <p className="text-purple-300 text-sm mt-1">Complete history of all your parcels</p>
               </div>
-              <button type="button"
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-[11px] text-purple-300 font-bold uppercase tracking-wide">Total Outstanding</p>
+                  <p className="text-lg font-black text-yellow-400">
+                    Rs {shipments.reduce((sum, s) => sum + (Number(s.debit || 0) + Number(s.petrol || 0) + Number(s.remote_charges || 0) - Number(s.credit || 0)), 0).toLocaleString()}
+                  </p>
+                </div>
+                <button type="button"
                 onClick={() => {
-                  const rows = shipments.map((s, i) =>
-                    `${i+1},${s.nexora_airwaybill},${s.receiver},${s.destination},${s.service},${s.remote_status || 'Non-Remote'},${s.remote_charges || 0},${s.debit || 0},${s.credit || 0},${new Date(s.created_at).toLocaleDateString()}`
-                  ).join('\n');
-                  const csv = `S.No,AWB,Receiver,Destination,Service,Remote Status,Remote Charges,Debit,Credit,Date\n${rows}`;
+                  const rows = shipments.map((s, i) => {
+                    const remaining = Number(s.debit || 0) + Number(s.petrol || 0) + Number(s.remote_charges || 0) - Number(s.credit || 0);
+                    return `${i+1},${s.nexora_airwaybill},${s.receiver},${s.destination},${s.service},${s.remote_status || 'Non-Remote'},${s.remote_charges || 0},${s.debit || 0},${s.credit || 0},${remaining},${new Date(s.created_at).toLocaleDateString()}`;
+                  }).join('\n');
+                  const csv = `S.No,AWB,Receiver,Destination,Service,Remote Status,Remote Charges,Debit,Credit,Remaining,Date\n${rows}`;
                   const blob = new Blob([csv], { type: 'text/csv' });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a'); a.href = url; a.download = 'nexora_ledger.csv'; a.click();
@@ -345,9 +353,10 @@ export default function CustomerPortal({ session, onLogout }) {
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all">
                 📥 Download CSV
               </button>
+              </div>
             </div>
             <div className="bg-purple-950/90 border border-purple-700/50 rounded-xl p-6 overflow-x-auto">
-              <table className="w-full text-sm text-left min-w-[900px]">
+              <table className="w-full text-sm text-left min-w-[1000px]">
                 <thead>
                   <tr className="text-purple-300 border-b border-purple-700/50 text-xs uppercase">
                     <th className="pb-3 px-2">S.No</th>
@@ -359,15 +368,19 @@ export default function CustomerPortal({ session, onLogout }) {
                     <th className="pb-3 px-2">Remote</th>
                     <th className="pb-3 px-2 text-right">Amount</th>
                     <th className="pb-3 px-2 text-right text-green-400">Paid</th>
+                    <th className="pb-3 px-2 text-right text-yellow-400">Remaining</th>
                     <th className="pb-3 px-2">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={10} className="text-center py-8 text-purple-300">Loading...</td></tr>
+                    <tr><td colSpan={11} className="text-center py-8 text-purple-300">Loading...</td></tr>
                   ) : shipments.length === 0 ? (
-                    <tr><td colSpan={10} className="text-center py-8 text-purple-300">No shipments yet</td></tr>
-                  ) : shipments.map((s, idx) => (
+                    <tr><td colSpan={11} className="text-center py-8 text-purple-300">No shipments yet</td></tr>
+                  ) : shipments.map((s, idx) => {
+                    const totalCharge = Number(s.debit || 0) + Number(s.petrol || 0) + Number(s.remote_charges || 0);
+                    const remaining = totalCharge - Number(s.credit || 0);
+                    return (
                     <tr key={s.id} className="border-b border-purple-800/40 hover:bg-purple-900/60/30">
                       <td className="py-3 px-2 text-purple-400/70">{shipments.length - idx}</td>
                       <td className="py-3 px-2 text-purple-300 text-xs">{s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A'}</td>
@@ -385,15 +398,16 @@ export default function CustomerPortal({ session, onLogout }) {
                           <span className="px-2 py-0.5 rounded text-xs font-bold bg-purple-900/40 text-purple-300">Non-Remote</span>
                         )}
                       </td>
-                      <td className="py-3 px-2 text-right font-mono text-yellow-400">Rs {Number(s.debit || 0).toLocaleString()}</td>
+                      <td className="py-3 px-2 text-right font-mono text-yellow-400">Rs {totalCharge.toLocaleString()}</td>
                       <td className="py-3 px-2 text-right font-mono text-green-400">Rs {Number(s.credit || 0).toLocaleString()}</td>
+                      <td className={`py-3 px-2 text-right font-mono font-bold ${remaining > 0 ? 'text-orange-400' : 'text-emerald-400'}`}>Rs {remaining.toLocaleString()}</td>
                       <td className="py-3 px-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${s.forwarding_awb ? 'bg-green-900/40 text-green-400' : 'bg-yellow-900/40 text-yellow-400'}`}>
                           {s.forwarding_awb ? 'Dispatched' : 'Processing'}
                         </span>
                       </td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </div>
