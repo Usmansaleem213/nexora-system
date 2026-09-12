@@ -27,14 +27,27 @@ export default function CustomerPortal({ session, onLogout }) {
     if (data) setRates(data);
   };
 
-  // Live estimate: matches the selected service + destination against the rate chart.
+  // Live estimate: matches the selected service + destination against the rate chart,
+  // then picks the right weight slab (rounds up to the next slab if weight falls between two).
   const matchedRate = rates.find(r =>
     r.service === formData.service &&
     r.destination.trim().toLowerCase() === formData.destination.trim().toLowerCase()
   );
-  const estimatedCost = matchedRate && Number(formData.weight) > 0
-    ? Math.max(Number(matchedRate.min_charge || 0), Number(matchedRate.per_kg_rate) * Number(formData.weight))
-    : null;
+  const calcEstimate = (rate, weight) => {
+    if (!rate || !weight || Number(weight) <= 0) return null;
+    const slabs = [...(rate.weight_slabs || [])].sort((a, b) => a.weight - b.weight);
+    if (slabs.length === 0) return null;
+    const w = Number(weight);
+    const exact = slabs.find(s => Number(s.weight) === w);
+    if (exact) return { price: Number(exact.price), slabLabel: `${exact.weight}kg slab` };
+    const nextUp = slabs.find(s => Number(s.weight) > w);
+    if (nextUp) return { price: Number(nextUp.price), slabLabel: `rounded up to ${nextUp.weight}kg slab` };
+    const maxSlab = slabs[slabs.length - 1];
+    const extraKg = w - Number(maxSlab.weight);
+    const extraCost = extraKg * Number(rate.extra_per_kg || 0);
+    return { price: Number(maxSlab.price) + extraCost, slabLabel: `${maxSlab.weight}kg + ${extraKg.toFixed(1)}kg extra` };
+  };
+  const estimate = matchedRate ? calcEstimate(matchedRate, formData.weight) : null;
   const destinationOptions = [...new Set(rates.map(r => r.destination))];
 
   const fetchMyShipments = async () => {
@@ -273,17 +286,17 @@ export default function CustomerPortal({ session, onLogout }) {
 
                     {/* Live rate estimate — updates as service, destination & weight are filled in */}
                     {formData.service && formData.destination && Number(formData.weight) > 0 && (
-                      matchedRate ? (
+                      estimate ? (
                         <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-4 flex items-center justify-between">
                           <div>
                             <p className="text-xs text-emerald-400 font-bold uppercase tracking-wide">Estimated Cost</p>
-                            <p className="text-[11px] text-purple-300/70 mt-0.5">{formData.service} • {formData.destination} • {formData.weight}kg @ Rs {Number(matchedRate.per_kg_rate).toLocaleString()}/kg</p>
+                            <p className="text-[11px] text-purple-300/70 mt-0.5">{formData.service} • {formData.destination} • {formData.weight}kg ({estimate.slabLabel})</p>
                           </div>
-                          <p className="text-2xl font-black text-emerald-400">Rs {estimatedCost.toLocaleString()}</p>
+                          <p className="text-2xl font-black text-emerald-400">Rs {estimate.price.toLocaleString()}</p>
                         </div>
                       ) : (
                         <div className="bg-purple-900/40 border border-purple-700/50 rounded-xl p-3 text-xs text-purple-300">
-                          ℹ️ Is route ka fixed rate abhi list mein nahi — humari team booking approve karte waqt aapko sahi price bata degi.
+                          ℹ️ Is route/weight ka fixed rate abhi list mein nahi — humari team booking approve karte waqt aapko sahi price bata degi.
                         </div>
                       )
                     )}
